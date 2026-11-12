@@ -1,0 +1,175 @@
+import type { ReactNode } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+} from "react-native";
+import { RefreshControl } from "react-native";
+import { ChevronLeft, RefreshCw, type LucideIcon } from "lucide-react-native";
+
+export function Page({
+  children,
+  className = "",
+  contentClassName = "",
+  refresh,
+}: {
+  children: ReactNode;
+  className?: string;
+  contentClassName?: string;
+  refresh?: { refreshing: boolean; onRefresh: () => void };
+}) {
+  return (
+    <ScrollView
+      className={`flex-1 bg-brand-canvas ${className}`}
+      contentContainerClassName={`px-5 pb-8 pt-5 ${contentClassName}`}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      refreshControl={refresh ? (
+        <RefreshControl refreshing={refresh.refreshing} onRefresh={refresh.onRefresh} tintColor="#17247a" />
+      ) : undefined}
+    >
+      {children}
+    </ScrollView>
+  );
+}
+
+export function Heading({
+  eyebrow,
+  title,
+  description,
+  onBack,
+}: {
+  eyebrow: string;
+  title: string;
+  description?: string;
+  onBack?: () => void;
+}) {
+  return (
+    <View className="mb-5">
+      {onBack ? (
+        <Pressable onPress={onBack} className="mb-3 flex-row items-center self-start">
+          <ChevronLeft size={17} color="#17247a" />
+          <Text className="font-semibold text-brand-navy">Back</Text>
+        </Pressable>
+      ) : null}
+      <Text className="mb-1 text-[10px] font-bold tracking-[1.7px] text-brand-navy">{eyebrow}</Text>
+      <Text className="text-[27px] font-bold leading-8 text-brand-ink">{title}</Text>
+      {description ? <Text className="mt-1 text-[13px] leading-5 text-brand-muted">{description}</Text> : null}
+    </View>
+  );
+}
+
+export function ActionButton({
+  label,
+  onPress,
+  icon: Icon,
+  kind = "primary",
+  disabled = false,
+}: {
+  label: string;
+  onPress: () => void;
+  icon?: LucideIcon;
+  kind?: "primary" | "secondary" | "danger";
+  disabled?: boolean;
+}) {
+  const style = kind === "primary"
+    ? "bg-brand-navy"
+    : kind === "danger"
+      ? "border border-red-200 bg-red-50"
+      : "border border-brand-line bg-white";
+  const textStyle = kind === "primary" ? "text-white" : kind === "danger" ? "text-red-700" : "text-brand-ink";
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      className={`min-h-11 flex-row items-center justify-center gap-2 rounded-xl px-4 ${style} ${disabled ? "opacity-50" : ""}`}
+    >
+      {Icon ? <Icon size={16} color={kind === "primary" ? "#ffffff" : kind === "danger" ? "#b91c1c" : "#17204f"} /> : null}
+      <Text className={`text-sm font-bold ${textStyle}`}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export function Field({
+  label,
+  leftIcon,
+  rightAccessory,
+  ...props
+}: TextInputProps & { label: string; leftIcon?: ReactNode; rightAccessory?: ReactNode }) {
+  return (
+    <View className="mb-4">
+      <Text className="mb-1.5 text-xs font-semibold text-brand-ink">{label}</Text>
+      <View className="min-h-12 flex-row items-center rounded-xl border border-brand-line bg-white px-3.5">
+        {leftIcon ? <View className="mr-2">{leftIcon}</View> : null}
+        <TextInput
+          {...props}
+          className={`flex-1 py-3 text-sm text-brand-ink ${props.className ?? ""}`}
+          placeholderTextColor="#9aa1b5"
+        />
+        {rightAccessory ? <View className="ml-2">{rightAccessory}</View> : null}
+      </View>
+    </View>
+  );
+}
+
+export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <View className={`rounded-2xl border border-brand-line bg-white p-4 ${className}`}>{children}</View>;
+}
+
+export function ErrorNotice({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <View className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3.5">
+      <Text className="text-sm leading-5 text-red-800">{message}</Text>
+      {onRetry ? (
+        <Pressable onPress={onRetry} className="mt-2 self-start">
+          <Text className="text-xs font-bold text-red-800">Try again</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+export function LoadingState({ label = "Loading…" }: { label?: string }) {
+  return (
+    <View className="items-center justify-center py-12">
+      <ActivityIndicator color="#17247a" />
+      <Text className="mt-3 text-sm text-brand-muted">{label}</Text>
+    </View>
+  );
+}
+
+export function EmptyState({ label }: { label: string }) {
+  return (
+    <View className="items-center rounded-xl bg-brand-canvas px-4 py-8">
+      <Text className="text-sm font-semibold text-brand-ink">{label}</Text>
+      <Text className="mt-1 text-center text-xs text-brand-muted">Records will appear here when available to your account.</Text>
+    </View>
+  );
+}
+
+export function SectionTitle({ title, action }: { title: string; action?: ReactNode }) {
+  return (
+    <View className="mb-3 flex-row items-center justify-between">
+      <Text className="text-base font-bold text-brand-ink">{title}</Text>
+      {action}
+    </View>
+  );
+}
+
+export function RefreshAction({ onPress, loading = false }: { onPress: () => void; loading?: boolean }) {
+  return (
+    <Pressable
+      accessibilityLabel="Refresh"
+      disabled={loading}
+      onPress={onPress}
+      className="h-10 w-10 items-center justify-center rounded-xl border border-brand-line bg-white"
+    >
+      <RefreshCw size={17} color="#17247a" />
+    </Pressable>
+  );
+}

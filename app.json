@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Sunvika Management",
+    "slug": "sunvika-management",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#f6f7fc"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sunvika.management"
+    },
+    "android": {
+      "package": "com.sunvika.management",
+      "usesCleartextTraffic": true
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-asset",
+      "expo-status-bar",
+      "expo-sharing"
+    ]
+  }
+}
