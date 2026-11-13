@@ -95,3 +95,8 @@ Customer details includes Convert to CP for MD, CP Head and RM. Review the invit
 
 
 More > Channel Partners is a separate CP directory. Employees excludes CPs in all/downline views. Channel Partners shows permitted CP accounts with correct pagination, active/inactive status, reporting managers and existing employee/history/invitation actions. RMs can invite CP accounts from this page; Employees invitations omit the CP role.
+
+
+## CP scheduled phone notifications
+
+RM, CP Head and MD manage schedules from More -> CP notifications; MIS can view. CPs read messages through their bell. Native phone push is prepared but needs an Expo/EAS project ID and push credentials before use. Set `EXPO_PUBLIC_EAS_PROJECT_ID` for the build, configure FCM/APNs in the Expo project and install a new development or production build with the `expo-notifications` plugin. Expo Go cannot receive remote push. CPs enable phone notifications from their bell and grant OS permission. Without that setup, scheduled messages remain available in the bell inbox. See backend `CP_NOTIFICATIONS.md` for the full setup and delivery behavior.

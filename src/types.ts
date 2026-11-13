@@ -27,6 +27,7 @@ export type ModuleKey =
   | "customers"
   | "quotations"
   | "amc"
+  | "cp-notifications"
   | "calling-reports"
   | "calling-lists"
   | "channel-partners"

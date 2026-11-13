@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { unregisterCpPush } from "./cp-push";
 import { api, refreshAccessToken, tokenStore } from "./api";
 import type { User } from "./types";
 
@@ -68,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
+      await unregisterCpPush();
       await api.post("/auth/logout");
     } finally {
       await tokenStore.set(null);

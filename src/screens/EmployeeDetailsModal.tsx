@@ -4,13 +4,15 @@ import { Clock3, X } from "lucide-react-native";
 import { api } from "../api";
 import { SelectField } from "../components/VisitFields";
 import { branchChoices, branchSelectionUpdate, employeeDistrictId, type BranchChoice } from "../employee-branches";
+import { useAuth } from "../auth";
+import CpCustomerConversionModal from "./CpCustomerConversionModal";
 import CustomerDetailsModal from "./CustomerDetailsModal";
 import type { RecordValue } from "../types";
 import { ActionButton, Card, ErrorNotice, Field, LoadingState } from "../ui";
 
 function isRecord(value: unknown): value is RecordValue { return Boolean(value) && typeof value === "object" && !Array.isArray(value); }
 const hiddenField = /password|token|secret|s3key|uploadId|^key$|^__v$|^_id$|^id$|^profileImage$|^failedLoginAttempts$|^lockedUntil$/i;
-function label(key: string) { const references: Record<string, string> = { reportingTo: "Reporting manager", hierarchyPath: "Reporting chain", sourceCustomer: "Original customer" }; return references[key] ?? key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/^./, (letter) => letter.toUpperCase()); }
+function label(key: string) { const references: Record<string, string> = { reportingTo: "Reporting manager", hierarchyPath: "Reporting chain", sourceCustomer: "Linked customer" }; return references[key] ?? key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/^./, (letter) => letter.toUpperCase()); }
 function display(value: unknown): string {
   if (value == null || value === "") return "—";
   if (typeof value === "string") {
@@ -39,6 +41,9 @@ function Details({ record, channelPartner = false }: { record: RecordValue; chan
 const editFields = [{ key: "firstName", label: "First name", max: 80 }, { key: "middleName", label: "Middle name", max: 80 }, { key: "lastName", label: "Last name", max: 80 }, { key: "mobileNumber", label: "Mobile number", max: 16 }, { key: "branch", label: "Branch (optional)", max: 24 }];
 
 export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, channelPartner = false }: { employeeId: string; onClose: () => void; onSaved: () => void; channelPartner?: boolean }) {
+  const { user } = useAuth();
+  const roleCode = typeof user?.role === "string" ? user.role : user?.role?.code;
+  const [convertCustomer, setConvertCustomer] = useState(false);
   const [customerHistory, setCustomerHistory] = useState(false);
   const [record, setRecord] = useState<RecordValue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -210,6 +215,7 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
             {imageUrl ? <Image accessibilityLabel={`${entity} profile image`} source={{ uri: imageUrl }} resizeMode="contain" style={{ width: "100%", height: 220, borderRadius: 12 }} onError={() => { setImageUrl(""); setImageError("The image could not be loaded. Request a fresh profile image link."); }} /> : null}
             <View className="mt-3 self-start"><ActionButton label="Refresh image" kind="secondary" disabled={imageLoading} onPress={() => void loadImage()} /></View>
           </Card> : null}
+          {isChannelPartner && !recordId(record.sourceCustomer) && record.isActive !== false && ["MD", "CP_HEAD", "RM"].includes(roleCode ?? "") ? <View className="mb-4 self-start"><ActionButton label="Convert to customer" disabled={busy} onPress={() => setConvertCustomer(true)}/></View> : null}
           {recordId(record.sourceCustomer) ? <View className="mb-4 self-start"><ActionButton label="Customer history" kind="secondary" onPress={() => setCustomerHistory(true)}/></View> : null}
           <Card className="mb-4"><Text className="mb-1 text-base font-bold text-brand-ink">{entity} information</Text><Details record={record} channelPartner={isChannelPartner} /></Card>
           {hierarchyLoading || hierarchyError || hierarchy !== null ? <Card className="mb-4"><Text className="mb-3 text-base font-bold text-brand-ink">Reporting hierarchy</Text>
@@ -219,6 +225,7 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
         </> : null}
       </ScrollView>
     </View></View>
+  {convertCustomer ? <CpCustomerConversionModal cpId={employeeId} onClose={() => setConvertCustomer(false)} onSaved={() => { setConvertCustomer(false); setNotice("Customer created and linked to this channel partner."); onSaved(); void reload(); }}/> : null}
   {customerHistory && recordId(record?.sourceCustomer) ? <CustomerDetailsModal customerId={recordId(record?.sourceCustomer)} onClose={() => setCustomerHistory(false)} onSaved={() => { void load(); }}/> : null}
 </Modal>
   

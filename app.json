@@ -23,7 +23,8 @@
       "expo-secure-store",
       "expo-asset",
       "expo-status-bar",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-notifications"
     ]
   }
 }

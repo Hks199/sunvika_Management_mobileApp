@@ -1,0 +1,54 @@
+import {useCallback,useEffect,useRef,useState} from 'react';
+import {Alert,Modal,ScrollView,Text,View} from 'react-native';
+import {api} from '../api';
+import {useAuth} from '../auth';
+import {SelectField,DateField} from '../components/VisitFields';
+import {Page,Heading,Card,Field,ActionButton,ErrorNotice,LoadingState} from '../ui';
+import {defaultReminder,reminderPayload,reminderManagerName,REMINDER_ROLES,REMINDER_INTERVALS,type ReminderDraft,type ReminderSchedule,type ReminderManager,type ReminderRun} from '../cp-reminders';
+export default function CpRemindersScreen({onBack}:{onBack:()=>void}){
+  const {user}=useAuth(),role=typeof user?.role==='string'?user.role:user?.role?.code;
+  const mutation=useRef(false);
+  const request=useRef(0),[managers,setManagers]=useState<ReminderManager[]>([]),[rm,setRm]=useState(''),[canManage,setCanManage]=useState(false);
+  const [draft,setDraft]=useState<ReminderDraft>(defaultReminder),[history,setHistory]=useState<ReminderRun[]>([]),[page,setPage]=useState(1),[pages,setPages]=useState(1);
+  const [schedules,setSchedules]=useState<ReminderSchedule[]>([]),[editing,setEditing]=useState<string|null>(null),[schedulePage,setSchedulePage]=useState(1),[schedulePages,setSchedulePages]=useState(1);
+  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState(''),[tick,setTick]=useState(0);
+  useEffect(()=>{let active=true;void api.get<{managers:ReminderManager[];canManage:boolean}>('/cp-reminders/managers').then(r=>{if(active){setManagers(r.data.managers);setCanManage(r.data.canManage);setRm(current=>r.data.managers.some(person=>person._id===current)?current:r.data.managers[0]?._id??'');setLoading(false);}}).catch(e=>{if(active){setError(e.message);setLoading(false);}});return()=>{active=false;};},[tick]);
+  const load=useCallback(async()=>{
+    const current=++request.current;if(!rm)return;setLoading(true);setError('');
+    try{const [config,runs]=await Promise.all([api.get<{items:ReminderSchedule[];meta:{totalPages:number}}>(`/cp-reminders?rmId=${rm}&page=${schedulePage}&limit=10`),api.get<{items:ReminderRun[];meta:{totalPages:number}}>(`/cp-reminders/${rm}/history?page=${page}&limit=10`)]);if(current!==request.current)return;setSchedules(config.data.items);setSchedulePages(config.data.meta.totalPages);if(schedulePage>Math.max(1,config.data.meta.totalPages))setSchedulePage(Math.max(1,config.data.meta.totalPages));setHistory(runs.data.items);setPages(runs.data.meta.totalPages);}
+    catch(e){if(current===request.current)setError(e instanceof Error?e.message:'Unable to load schedule');}finally{if(current===request.current)setLoading(false);}
+  },[rm,page,schedulePage]);
+  useEffect(()=>{void load();return()=>{request.current++;};},[load,tick]);
+  async function save(){if(mutation.current||busy||!rm||editing===null)return;mutation.current=true;setBusy(true);setError('');setNotice('');try{if(editing)await api.patch(`/cp-reminders/schedules/${editing}`,reminderPayload(draft));else await api.post(`/cp-reminders/${rm}`,reminderPayload(draft));setEditing(null);setSchedulePage(1);setNotice(draft.enabled?'Notification schedule saved for this RM’s active downline CPs.':'Notification schedule paused.');await load();}catch(e){setError(e instanceof Error?e.message:'Unable to save schedule');}finally{mutation.current=false;setBusy(false);}}
+  async function remove(item:ReminderSchedule){
+    if(mutation.current||busy)return;
+    mutation.current=true;setBusy(true);setError('');setNotice('');try{await api.delete(`/cp-reminders/schedules/${item._id}`);if(editing===item._id)setEditing(null);setNotice('Notification schedule deleted.');await load();}catch(e){setError(e instanceof Error?e.message:'Unable to delete schedule');}finally{mutation.current=false;setBusy(false);}
+  }
+  function confirmDelete(item:ReminderSchedule){Alert.alert('Delete notification schedule?',`Delete "${item.title}"? Future sends will stop. Sent messages and history will remain.`,[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:()=>void remove(item)}]);}
+  const disabled=busy||loading||!canManage;
+  if(!REMINDER_ROLES.includes(role??''))return <Page><Text>This page is available to RM and management.</Text></Page>;
+  return <Page><Heading eyebrow="CHANNEL PARTNER COMMUNICATION" title="CP notifications" description="Schedule messages for active CPs under an RM. All times are in IST." onBack={onBack}/><View className="mb-4"><ActionButton label="Refresh" kind="secondary" disabled={busy} onPress={()=>setTick(v=>v+1)}/></View>
+    {error&&editing===null?<ErrorNotice message={error} onRetry={()=>setTick(v=>v+1)}/>:null}{notice?<Text className="mb-4 text-sm text-emerald-700">{notice}</Text>:null}
+    <Card className="mb-4"><Text className="mb-3 text-xs leading-5 text-brand-muted">Messages appear in the CP bell inbox. Phone alerts also require mobile push setup and permission on the CP’s phone.</Text><SelectField label="RM" value={rm} options={managers.map(person=>({value:person._id,label:reminderManagerName(person)}))} placeholder="Select RM" searchPlaceholder="Search RM name or code" disabled={busy} onChange={value=>{request.current++;setRm(value);setPage(1);setSchedulePage(1);setEditing(null);setSchedules([]);setHistory([]);setNotice('');}}/>
+      {loading?<LoadingState/>:null}{!managers.length&&!loading?<Text>No active RMs are available in your permitted hierarchy.</Text>:null}
+      {rm?<><Text className="mb-3 text-lg font-bold text-brand-ink">Notification schedules</Text>{canManage?<View className="mb-4"><ActionButton label="Add notification" disabled={busy||loading} onPress={()=>{setEditing('');setDraft(defaultReminder());setError('');}}/></View>:null}
+        {schedules.map(item=><View key={item._id} className="mb-4 border-b border-brand-line pb-4"><Text className="font-bold text-brand-ink">{item.title}</Text><Text className="my-2 text-sm text-brand-ink">{item.body}</Text><Text className="mb-3 text-xs leading-5 text-brand-muted">{item.enabled?'Enabled':'Paused'} · {item.startDate} to {item.endDate} · Every {item.everyDays} day(s) · {item.time} IST{item.repeatMinutes?` · Every ${item.repeatMinutes} minutes until ${item.endTime}`:''}</Text>{canManage?<View className="flex-row flex-wrap gap-2"><ActionButton label="Edit" kind="secondary" disabled={busy||loading} onPress={()=>{setEditing(item._id);setDraft(item);setError('');}}/><ActionButton label="Delete" kind="danger" disabled={busy||loading} onPress={()=>confirmDelete(item)}/></View>:null}</View>)}
+        {!schedules.length&&!loading?<Text className="mb-3 text-sm text-brand-muted">No schedules for this RM yet.</Text>:null}<View className="mb-4 flex-row items-center justify-between"><ActionButton label="Previous schedules" kind="secondary" disabled={schedulePage<=1||busy||loading} onPress={()=>setSchedulePage(v=>v-1)}/><Text>{schedulePage}</Text><ActionButton label="Next schedules" kind="secondary" disabled={schedulePage>=schedulePages||busy||loading} onPress={()=>setSchedulePage(v=>v+1)}/></View>
+      </>:null}
+      {rm&&editing!==null?<Modal visible transparent animationType="slide" onRequestClose={()=>{if(!busy)setEditing(null);}}><View className="flex-1 justify-end bg-black/40"><View className="max-h-[92%] rounded-t-3xl bg-brand-canvas p-5 pb-8"><ScrollView keyboardShouldPersistTaps="handled"><Text className="mb-4 text-lg font-bold text-brand-ink">{editing?'Edit notification schedule':'New notification schedule'}</Text><Text className="mb-3 text-xs text-brand-muted">For a single-day notification, set Run for to 1 day.</Text>{error?<Text accessibilityRole="alert" className="mb-3 text-sm text-red-700">{error}</Text>:null}
+        <Field label="Notification title" value={draft.title} maxLength={100} editable={!disabled} onChangeText={title=>setDraft({...draft,title})}/>
+        <Field label="Notification message (up to 500 characters)" value={draft.body} multiline maxLength={500} editable={!disabled} onChangeText={body=>setDraft({...draft,body})}/>
+        <DateField label="Start date" value={draft.startDate} disabled={disabled} onChange={startDate=>setDraft({...draft,startDate})}/>
+        <Field label="Run for (days)" value={String(draft.durationDays||'')} keyboardType="number-pad" editable={!disabled} onChangeText={value=>setDraft({...draft,durationDays:Number(value)})}/>
+        <Field label="Send every (days)" value={String(draft.everyDays||'')} keyboardType="number-pad" editable={!disabled} onChangeText={value=>setDraft({...draft,everyDays:Number(value)})}/>
+        <Field label="First send time (IST, HH:mm)" value={draft.time} maxLength={5} editable={!disabled} onChangeText={time=>setDraft({...draft,time})}/>
+        <SelectField label="Frequency within the day" value={String(draft.repeatMinutes)} options={REMINDER_INTERVALS.map(item=>({value:String(item.value),label:item.label}))} placeholder="Choose frequency" disabled={disabled} onChange={value=>setDraft({...draft,repeatMinutes:Number(value)})}/>
+        {draft.repeatMinutes>0?<Field label="Last send time (IST, HH:mm)" value={draft.endTime} maxLength={5} editable={!disabled} onChangeText={endTime=>setDraft({...draft,endTime})}/>:null}
+        <View className="mb-4"><ActionButton label={`Schedule: ${draft.enabled?'ON':'PAUSED'}`} disabled={disabled} kind="secondary" onPress={()=>setDraft({...draft,enabled:!draft.enabled})}/></View>
+        {canManage?<ActionButton label={busy?'Saving...':'Save notification schedule'} disabled={disabled} onPress={()=>void save()}/>:<Text>You have read-only access to notification schedules.</Text>}
+        <View className="mt-3"><ActionButton label="Cancel" kind="secondary" disabled={busy} onPress={()=>setEditing(null)}/></View>
+      </ScrollView></View></View></Modal>:null}
+    </Card>
+    {rm?<Card><Text className="mb-3 text-lg font-bold text-brand-ink">Notification history</Text>{history.map(run=><View key={run._id} className="mb-4 border-b border-brand-line pb-3"><Text className="font-bold text-brand-ink">{run.title}</Text><Text className="my-2 text-sm text-brand-ink">{run.body}</Text><Text className="text-xs leading-5 text-brand-muted">{run.slot.replace('T',' ')} IST · {run.state} · {run.recipientCount} CP inboxes · {run.push.ACCEPTED??0} push tickets · {run.push.DELIVERED??0} push service handoffs · {run.push.FAILED??0} push failures</Text></View>)}{!history.length?<Text>No scheduled messages have been sent yet.</Text>:null}<View className="mt-4 flex-row items-center justify-between"><ActionButton label="Newer" disabled={page<=1||loading} kind="secondary" onPress={()=>setPage(v=>v-1)}/><Text>{page}</Text><ActionButton label="Older" disabled={page>=pages||loading} kind="secondary" onPress={()=>setPage(v=>v+1)}/></View></Card>:null}
+  </Page>;
+}

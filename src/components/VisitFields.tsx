@@ -56,11 +56,12 @@ function localDate(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-export function DateField({ label, value, onChange, includeTime = false }: {
+export function DateField({ label, value, onChange, includeTime = false, disabled = false }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   includeTime?: boolean;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(new Date());
@@ -84,7 +85,7 @@ export function DateField({ label, value, onChange, includeTime = false }: {
   return (
     <View className="mb-4">
       <Text className="mb-1.5 text-xs font-semibold text-brand-ink">{label}</Text>
-      <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={show} className="min-h-12 flex-row items-center justify-between rounded-xl border border-brand-line bg-white px-3.5 py-3">
+      <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={show} className="min-h-12 flex-row items-center justify-between rounded-xl border border-brand-line bg-white px-3.5 py-3">
         <Text className={`flex-1 text-sm ${value ? "text-brand-ink" : "text-brand-muted"}`}>{display}</Text><CalendarDays size={17} color="#78819b" />
       </Pressable>
       <Modal transparent animationType="slide" visible={open} onRequestClose={() => setOpen(false)}>
@@ -105,7 +106,7 @@ export function DateField({ label, value, onChange, includeTime = false }: {
               })}
             </View>
             {includeTime ? <View className="mb-4"><Text className="mb-2 text-xs font-semibold text-brand-ink">Time (24-hour)</Text><View className="flex-row items-center gap-2"><TextInput accessibilityLabel="Hour" keyboardType="number-pad" maxLength={2} value={hour} onChangeText={setHour} className="h-12 w-16 rounded-xl border border-brand-line bg-white text-center text-brand-ink" /><Text>:</Text><TextInput accessibilityLabel="Minute" keyboardType="number-pad" maxLength={2} value={minute} onChangeText={setMinute} className="h-12 w-16 rounded-xl border border-brand-line bg-white text-center text-brand-ink" /></View>{!validTime ? <Text className="mt-2 text-xs text-red-800">Enter an hour from 0–23 and minutes from 0–59.</Text> : null}</View> : null}
-            <View className="flex-row justify-end gap-2"><ActionButton label="Clear" kind="secondary" onPress={() => { onChange(""); setOpen(false); }} /><ActionButton label="Apply" disabled={!day || (includeTime && !validTime)} onPress={() => { onChange(includeTime ? `${day}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}` : day); setOpen(false); }} /></View>
+            <View className="flex-row justify-end gap-2"><ActionButton label="Clear" kind="secondary" disabled={disabled} onPress={() => { onChange(""); setOpen(false); }} /><ActionButton label="Apply" disabled={disabled || !day || (includeTime && !validTime)} onPress={() => { onChange(includeTime ? `${day}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}` : day); setOpen(false); }} /></View>
           </View>
         </View>
       </Modal>
