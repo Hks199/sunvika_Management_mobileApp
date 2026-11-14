@@ -136,7 +136,7 @@ function geographyOptions(data: unknown): SelectOption[] {
     ? [{ value: row._id, label: row.name }] : []);
 }
 
-const emptyRecordFilters = { stateId: "", districtId: "", branchId: "", dateFrom: "", dateTo: "", employeeName: "", cpType: "" };
+const emptyRecordFilters = { stateId: "", districtId: "", branchId: "", dateFrom: "", dateTo: "", employeeName: "", cpType: "", customerType: "" };
 
 const leadStatuses = ["PENDING", "INTERESTED", "NOT_INTERESTED", "SITE_VISITED", "NEED_FOLLOWUP", "QUOTATION_SENT", "LOST"];
 const conversionDocumentTypes = ["PAN", "AADHAAR", "ELECTRICITY_BILL", "BANK_PASSBOOK"] as const;
@@ -1023,6 +1023,7 @@ export default function RecordsScreen({
           if (filters.districtId) query.set("districtId", filters.districtId);
           if (type === "channel-partners" && filters.cpType) query.set("cpType", filters.cpType);
         }
+        if (type === "customers" && filters.customerType) query.set("customerType", filters.customerType);
         if (filters.branchId) query.set("branchId", filters.branchId);
         if (filters.dateFrom) query.set("dateFrom", filters.dateFrom);
         if (filters.dateTo) query.set("dateTo", filters.dateTo);
@@ -1111,6 +1112,7 @@ export default function RecordsScreen({
               </View>
               {roleCode !== "CP" ? <Field label={isEmployeeDirectory ? "Upline/team (includes downline)" : "Employee/team (includes downline)"} accessibilityLabel="Filter by employee name, including their downline" placeholder="Name or employee code" maxLength={100} value={filters.employeeName} onChangeText={(value) => changeFilter("employeeName", value)} /> : null}
               {type === "channel-partners" ? <SelectField label="CP type" value={filters.cpType} options={[{ value: "cp_only", label: "CP only" }, { value: "customer_cp", label: "Customer + CP" }]} placeholder="All channel partners" onChange={value => changeFilter("cpType", value)} /> : null}
+              {type === "customers" ? <SelectField label="Customer type" value={filters.customerType} options={[{ value: "customer_only", label: "Only Customer" }]} placeholder="All (Customer + CP)" onChange={value => changeFilter("customerType", value)} /> : null}
               <View className="mb-3 self-start"><ActionButton label="Clear filters" kind="secondary" onPress={() => { setFilters(emptyRecordFilters); setPage(1); }} /></View>
               {geographyError ? <ErrorNotice message={geographyError} onRetry={() => setGeographyReload((current) => current + 1)} /> : null}
             </View>

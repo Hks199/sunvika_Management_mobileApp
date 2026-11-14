@@ -55,7 +55,6 @@ export default function QuotationDetailsModal({ quotationId, onClose, onSaved }:
   const [mobileNumber, setMobileNumber] = useState("");
   const [shareResult, setShareResult] = useState<ShareResult | null>(null);
   const [pdf, setPdf] = useState<QuotationPdf | null>(null);
-  const [download, setDownload] = useState<{ url: string; expiresInSeconds?: number } | null>(null);
   const [history, setHistory] = useState<RecordValue[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
@@ -127,11 +126,11 @@ export default function QuotationDetailsModal({ quotationId, onClose, onSaved }:
   }
 
   async function getDownload() {
-    setBusy(true); setActionError(""); setDownload(null);
+    setBusy(true); setActionError("");
     try {
-      const response = await api.get<{ url?: string; expiresInSeconds?: number }>(`${path}/download-url`);
-      setDownload({ url: httpUrl(response.data?.url), expiresInSeconds: response.data?.expiresInSeconds });
-    } catch (cause) { setActionError(cause instanceof Error ? cause.message : "Unable to get quotation download link."); }
+      const bytes = await api.getPdf(`${path}/file`);
+      await downloadQuotationPdf({ bytes, fileName: quotationFileName(record?.quotationNumber) });
+    } catch (cause) { setActionError(cause instanceof Error ? cause.message : "Unable to download quotation PDF."); }
     finally { setBusy(false); }
   }
 
@@ -160,12 +159,10 @@ export default function QuotationDetailsModal({ quotationId, onClose, onSaved }:
         {error ? <ErrorNotice message={error} onRetry={() => void load()} /> : null}
         {record && !loading ? <>
           <View className="mb-4 flex-row flex-wrap gap-2">
-            {canSendQuotation ? <ActionButton label={sharingForm ? "Cancel sharing" : "Share quotation via WhatsApp"} icon={Share2} disabled={busy} onPress={() => { setSharingForm((current) => !current); setActionError(""); }} /> : null}
             <ActionButton label="Download PDF" icon={Download} kind="secondary" disabled={busy} onPress={() => void getDownload()} />
             <ActionButton label="Share history" icon={Clock3} kind="secondary" disabled={historyLoading} onPress={() => void loadHistory()} />
           </View>
           {actionError ? <ErrorNotice message={actionError} /> : null}
-          {download ? <Card className="mb-4"><Text className="mb-3 text-sm text-brand-ink">Your quotation download is ready.{typeof download.expiresInSeconds === "number" ? ` Link expires in ${download.expiresInSeconds} seconds.` : ""}</Text><ActionButton label="Open download" icon={ExternalLink} onPress={() => void openUrl(download.url)} /></Card> : null}
           {canSendQuotation && sharingForm ? <Card className="mb-4">
             <Text className="mb-3 text-base font-bold text-brand-ink">Share quotation via WhatsApp</Text>
             <Text className="mb-4 text-xs leading-5 text-brand-muted">The device share menu asks you to choose WhatsApp and the recipient. This number is only for the chat-link fallback; WhatsApp cannot pre-attach a PDF to a selected chat.</Text>
