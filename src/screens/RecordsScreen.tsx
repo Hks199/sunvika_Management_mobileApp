@@ -1,3 +1,4 @@
+import CpBulkImport from '../components/CpBulkImport';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Modal,
@@ -1076,6 +1077,7 @@ export default function RecordsScreen({
             </Pressable>
           ) : null}
         </View>
+        {type === "channel-partners" && ["MD", "CP_HEAD", "RM"].includes(roleCode ?? "") ? <CpBulkImport onImported={() => void load()}/> : null}
         <Card className="mb-4">
           <View className="mb-3 flex-row items-center justify-between">
             <Text className="text-base font-bold text-brand-ink">{config.title}</Text>
