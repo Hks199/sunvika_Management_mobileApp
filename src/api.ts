@@ -51,6 +51,15 @@ function messageFrom(body: unknown, fallback: string): string {
   return errors.length ? `${message}: ${errors.join("; ")}` : message;
 }
 
+function failureMessage(response: Response, body: unknown, path: string, method = "GET"): string {
+  if (response.status === 405) {
+    // Omit query parameters, which can contain temporary download tokens.
+    const endpoint = `${API_BASE}${path.split("?")[0]}`;
+    return `Request failed (405): ${method.toUpperCase()} ${endpoint}. The server does not allow this method. Check EXPO_PUBLIC_API_URL and the server's API routing, then restart Expo with a cleared cache.`;
+  }
+  return messageFrom(body, `Request failed (${response.status})`);
+}
+
 async function request<T>(
   path: string,
   init: RequestInit = {},
@@ -73,7 +82,7 @@ async function request<T>(
     await tokenStore.set(null);
   }
   if (!response.ok) {
-    const error = new Error(messageFrom(body, `Request failed (${response.status})`)) as Error & {
+    const error = new Error(failureMessage(response, body, path, init.method)) as Error & {
       status?: number;
       retryAfterSeconds?: number;
     };
@@ -128,7 +137,9 @@ async function requestPdf(path: string, retry = true): Promise<ArrayBuffer> {
   }
   if (!response.ok) {
     const body: unknown = await response.json().catch(() => null);
-    throw new Error(messageFrom(body, `PDF request failed (${response.status})`));
+    throw new Error(response.status === 405
+      ? failureMessage(response, body, path)
+      : messageFrom(body, `PDF request failed (${response.status})`));
   }
   if (!response.headers.get("Content-Type")?.toLowerCase().includes("application/pdf")) throw new Error("The API did not return a PDF file.");
   const bytes = await response.arrayBuffer();

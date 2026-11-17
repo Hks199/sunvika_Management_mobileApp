@@ -1,3 +1,7 @@
+import EmployeeDirectoryTable from "../components/EmployeeDirectoryTable";
+import { dateTimeInput, formatVisitDateTime, visitUpdatePayload } from "../visit-form";
+import LeadCreateFields from "../components/LeadCreateFields";
+import { createLeadPayload } from "../lead-form";
 import CpBulkImport from '../components/CpBulkImport';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -114,8 +118,9 @@ function formatValue(value: unknown): string {
   if (typeof value === "object") {
     const item = value as RecordValue;
     if (item.$numberDecimal !== undefined) return String(item.$numberDecimal);
-    const person = [item.firstName, item.lastName].filter((part): part is string => typeof part === "string" && Boolean(part.trim())).join(" ");
-    const named = person || item.name || item.fullName || item.employeeName || item.customerName || item.employeeCode || item.leadCode || item.quotationNumber || item.contractNumber;
+    const person = [item.firstName, item.middleName, item.lastName].filter((part): part is string => typeof part === "string" && Boolean(part.trim())).join(" ");
+    const personWithCode = [person, item.employeeCode].filter(Boolean).join(" \u00b7 ");
+    const named = personWithCode || item.name || item.fullName || item.employeeName || item.customerName || item.employeeCode || item.leadCode || item.quotationNumber || item.contractNumber;
     return typeof named === "string" ? named : "Linked record";
   }
   return "—";
@@ -424,9 +429,9 @@ function LeadDetailsModal({
             {record ? (
               <>
                 <View className="mb-4 flex-row flex-wrap gap-2">
-                  <ActionButton label="Update status" disabled={busy} onPress={() => openAction("status")} />
-                  <ActionButton label="Assign" disabled={busy} kind="secondary" onPress={() => openAction("assignment")} />
-                  <ActionButton label="Edit" disabled={busy} kind="secondary" onPress={() => openAction("edit")} />
+                  <ActionButton label="Update lead status" disabled={busy} onPress={() => openAction("status")} />
+                  <ActionButton label="Assign lead" disabled={busy} kind="secondary" onPress={() => openAction("assignment")} />
+                  <ActionButton label="Edit lead" disabled={busy} kind="secondary" onPress={() => openAction("edit")} />
                   <ActionButton label="Convert to customer" disabled={busy} kind="secondary" onPress={() => openAction("convert")} />
                   <ActionButton label={history.length ? "Refresh status history" : "Status history"} disabled={historyLoading} kind="secondary" icon={Clock3} onPress={() => void loadHistory()} />
                 </View>
@@ -445,7 +450,7 @@ function LeadDetailsModal({
                         </View>
                         <Field label="Status note" maxLength={1000} multiline numberOfLines={3} onChangeText={(text) => setValue("remark", text)} value={values.remark ?? ""} />
                         {status === "NEED_FOLLOWUP" ? (
-                          <Field label="Next follow-up (YYYY-MM-DDTHH:mm)" placeholder="2026-12-31T14:30" onChangeText={(text) => setValue("nextFollowUpDate", text)} value={values.nextFollowUpDate ?? ""} />
+                          <DateField label="Next follow-up" includeTime disabled={busy} onChange={(text) => setValue("nextFollowUpDate", text)} value={values.nextFollowUpDate ?? ""} />
                         ) : null}
                         {status === "QUOTATION_SENT" ? (
                           <>
@@ -544,12 +549,15 @@ function LeadDetailsModal({
   );
 }
 
-function dateTimeInput(value: unknown): string {
-  if (typeof value !== "string" && !(value instanceof Date)) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 16);
+const hiddenVisitField = /password|token|secret|s3key|uploadId|^key$|^__v$|^_id$|^id$/i;
+function visitDetailValue(value: unknown): string {
+  if (typeof value === "string" && /^\d{4}-\d\d-\d\dT/.test(value)) return formatVisitDateTime(value);
+  const display = formatValue(value);
+  if (display === "Linked record" && value && typeof value === "object" && !Array.isArray(value)) {
+    return Object.entries(value).filter(([key]) => !hiddenVisitField.test(key))
+      .map(([key,item]) => `${key.replace(/([A-Z])/g," $1")}: ${visitDetailValue(item)}`).join(", ") || "\u2014";
+  }
+  return display;
 }
 
 function VisitDetailsModal({
@@ -566,6 +574,11 @@ function VisitDetailsModal({
   const [record, setRecord] = useState<RecordValue | null>(null);
   const [history, setHistory] = useState<RecordValue[]>([]);
   const [historyLabel, setHistoryLabel] = useState("");
+  const [historyKind, setHistoryKind] = useState<VisitHistoryKind | null>(null);
+  const [historyError, setHistoryError] = useState("");
+  const [notice, setNotice] = useState("");
+  const detailRequest = useRef(0);
+  const historyRequest = useRef(0);
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -575,10 +588,12 @@ function VisitDetailsModal({
 
   const loadRecord = useCallback(async () => {
     if (!visitId) return;
+    const current = ++detailRequest.current;
     setLoading(true);
     setError("");
     try {
       const response = await api.get<unknown>(`/visits/${encodeURIComponent(visitId)}`);
+      if (current !== detailRequest.current) return;
       if (!response.data || typeof response.data !== "object" || Array.isArray(response.data)) {
         throw new Error("The API returned an invalid site visit.");
       }
@@ -590,10 +605,11 @@ function VisitDetailsModal({
         remark: typeof visit.remark === "string" ? visit.remark : "",
       });
     } catch (cause) {
+      if (current !== detailRequest.current) return;
       setError(cause instanceof Error ? cause.message : "Unable to load site visit details.");
       setRecord(null);
     } finally {
-      setLoading(false);
+      if (current === detailRequest.current) setLoading(false);
     }
   }, [visitId]);
 
@@ -602,8 +618,10 @@ function VisitDetailsModal({
       void loadRecord();
       setHistory([]);
       setHistoryLabel("");
+      setHistoryKind(null); setHistoryError(""); setNotice("");
       setEditing(false);
     }
+    return () => { detailRequest.current += 1; historyRequest.current += 1; };
   }, [visible, loadRecord]);
 
   async function loadVisitHistory(kind: VisitHistoryKind) {
@@ -615,73 +633,61 @@ function VisitDetailsModal({
       setError(`No linked ${kind === "lead" ? "lead" : "employee"} is available for this visit.`);
       return;
     }
+    const current = ++historyRequest.current;
+    setHistoryKind(kind);
+    setHistoryLabel(kind === "lead" ? "Lead visit history" : "Employee visit history");
+    setHistory([]); setHistoryError("");
     setHistoryLoading(true);
-    setError("");
     try {
       const path = kind === "lead" ? `/visits/leads/${encodeURIComponent(linkedId)}` : `/visits/employees/${encodeURIComponent(linkedId)}`;
       const response = await api.get<unknown>(`${path}?page=1&limit=20`);
+      if (current !== historyRequest.current) return;
       const parsed = unwrap(response.data);
       setHistory(parsed.rows);
       setHistoryLabel(kind === "lead" ? "Lead visit history" : "Employee visit history");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to load visit history.");
+      if (current === historyRequest.current) setHistoryError(cause instanceof Error ? cause.message : "Unable to load visit history.");
     } finally {
-      setHistoryLoading(false);
+      if (current === historyRequest.current) setHistoryLoading(false);
     }
   }
 
   async function saveVisit() {
-    setError("");
-    const visitDate = new Date(values.visitDate);
-    const nextVisitDate = values.nextVisitDate ? new Date(values.nextVisitDate) : null;
-    if (Number.isNaN(visitDate.getTime()) || visitDate.getTime() > Date.now()) {
-      setError("Enter a valid visit date and time that is not in the future.");
-      return;
-    }
-    if (!values.remark.trim() || values.remark.trim().length > 2000) {
-      setError("Enter visit remarks (up to 2,000 characters).");
-      return;
-    }
-    if (nextVisitDate && (Number.isNaN(nextVisitDate.getTime()) || nextVisitDate.getTime() <= Date.now())) {
-      setError("The next visit must be scheduled for a future date and time.");
-      return;
-    }
-    setBusy(true);
+    if (busy || !record) return;
+    setError(""); setNotice("");
     try {
-      const payload: Record<string, unknown> = {
-        visitDate: visitDate.toISOString(),
-        remark: values.remark.trim(),
-        nextVisitDate: nextVisitDate ? nextVisitDate.toISOString() : null,
-      };
+      const payload = visitUpdatePayload(record, values);
+      setBusy(true);
       await api.patch(`/visits/${encodeURIComponent(visitId)}`, payload);
       setEditing(false);
+      setNotice("Site visit updated successfully.");
       await loadRecord();
       onSaved();
+      if (historyKind) await loadVisitHistory(historyKind);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to update site visit.");
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }
 
   return (
-    <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
+    <Modal animationType="slide" onRequestClose={() => { if (!busy) onClose(); }} transparent visible={visible}>
       <View className="flex-1 justify-end bg-black/40">
         <View className="max-h-[92%] rounded-t-3xl bg-brand-canvas px-5 pb-8 pt-5">
           <View className="mb-4 flex-row items-center justify-between">
             <View className="flex-1 pr-3">
               <Text className="text-[10px] font-bold tracking-wide text-brand-navy">SITE VISIT DETAILS</Text>
               <Text numberOfLines={2} className="mt-1 text-xl font-bold text-brand-ink">
-                {record ? formatValue(record.visitDate) : "Loading site visit…"}
+                {record ? formatVisitDateTime(record.visitDate) : "Loading site visit…"}
               </Text>
             </View>
-            <Pressable accessibilityLabel="Close site visit details" onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white">
+            <Pressable accessibilityLabel="Close site visit details" disabled={busy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white">
               <X size={19} color="#17204f" />
             </Pressable>
           </View>
           <ScrollView className="max-h-[84%]" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {loading && !record ? <LoadingState label="Loading site visit details…" /> : null}
             {error ? <ErrorNotice message={error} onRetry={() => void loadRecord()} /> : null}
+            {notice ? <Text accessibilityRole="alert" className="mb-3 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">{notice}</Text> : null}
             {record ? (
               <>
                 <View className="mb-4 flex-row flex-wrap gap-2">
@@ -701,35 +707,38 @@ function VisitDetailsModal({
                 {editing ? (
                   <Card className="mb-4">
                     <Text className="mb-3 text-base font-bold text-brand-ink">Update site visit</Text>
-                    <DateField label="Visit date" includeTime onChange={(text) => setValues((current) => ({ ...current, visitDate: text }))} value={values.visitDate} />
-                    <DateField label="Next visit (optional)" includeTime onChange={(text) => setValues((current) => ({ ...current, nextVisitDate: text }))} value={values.nextVisitDate} />
-                    <Field label="Visit remarks" maxLength={2000} multiline numberOfLines={4} onChangeText={(text) => setValues((current) => ({ ...current, remark: text }))} value={values.remark} />
+                    <DateField label="Visit date" includeTime disabled={busy} onChange={(text) => setValues((current) => ({ ...current, visitDate: text }))} value={values.visitDate} />
+                    <DateField label="Next visit (optional)" includeTime disabled={busy} onChange={(text) => setValues((current) => ({ ...current, nextVisitDate: text }))} value={values.nextVisitDate} />
+                    <Field label="Visit remarks" editable={!busy} maxLength={2000} multiline numberOfLines={4} onChangeText={(text) => setValues((current) => ({ ...current, remark: text }))} value={values.remark} />
                     <ActionButton label={busy ? "Saving…" : "Save visit"} disabled={busy} onPress={() => void saveVisit()} />
                   </Card>
                 ) : null}
                 <Card className="mb-4">
                   <Text className="mb-2 text-base font-bold text-brand-ink">Visit information</Text>
                   {Object.entries(record)
-                    .filter(([key, value]) => key !== "__v" && !privateKeys.has(key) && value !== undefined)
+                    .filter(([key, value]) => !hiddenVisitField.test(key) && !privateKeys.has(key) && value !== undefined)
                     .map(([key, value]) => (
                       <View key={key} className="border-b border-brand-line py-3">
                         <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted">{key.replace(/([A-Z])/g, " $1")}</Text>
-                        <Text className="mt-1 text-sm leading-5 text-brand-ink">{formatValue(value)}</Text>
+                        <Text className="mt-1 text-sm leading-5 text-brand-ink">{visitDetailValue(value)}</Text>
                       </View>
                     ))}
                 </Card>
                 {historyLabel ? (
                   <Card className="mb-4">
                     <Text className="mb-2 text-base font-bold text-brand-ink">{historyLabel}</Text>
+                    <Text className="mb-3 text-xs leading-5 text-brand-muted">{historyKind === "lead" ? "Visits for this lead, including visits by different employees." : "Visits made by this employee across all accessible leads."}</Text>
+                    {historyError ? <ErrorNotice message={historyError} onRetry={() => {if(historyKind)void loadVisitHistory(historyKind);}}/> : null}
                     {historyLoading ? <LoadingState label="Loading visit history…" /> : history.length ? history.map((visit, index) => (
                       <View key={String(visit._id ?? index)} className="border-b border-brand-line py-3">
-                        <Text className="text-sm font-bold text-brand-ink">Visit · {formatValue(visit.visitDate)}</Text>
+                        <Text className="text-sm font-bold text-brand-ink">Visit · {formatVisitDateTime(visit.visitDate)}</Text>
                         {visit.lead ? <Text className="mt-1 text-xs text-brand-muted">Lead: {formatValue(visit.lead)}</Text> : null}
+                        {visit.lead && typeof visit.lead === "object" && "leadCode" in visit.lead ? <Text className="mt-1 text-xs text-brand-muted">Lead code: {String(visit.lead.leadCode)}</Text> : null}
                         {typeof visit.remark === "string" ? <Text className="mt-1 text-sm text-brand-ink">Note: {visit.remark}</Text> : null}
-                        {visit.nextVisitDate ? <Text className="mt-1 text-xs text-brand-muted">Next visit: {formatValue(visit.nextVisitDate)}</Text> : null}
+                        {visit.nextVisitDate ? <Text className="mt-1 text-xs text-brand-muted">Next visit: {formatVisitDateTime(visit.nextVisitDate)}</Text> : null}
                         {visit.visitedBy ? <Text className="mt-1 text-xs text-brand-muted">Visited by {formatValue(visit.visitedBy)}</Text> : null}
                       </View>
-                    )) : <Text className="py-2 text-sm text-brand-muted">No related site visits were found.</Text>}
+                    )) : !historyError ? <Text className="py-2 text-sm text-brand-muted">No related site visits were found.</Text> : null}
                   </Card>
                 ) : null}
               </>
@@ -784,16 +793,6 @@ function CreateRecordModal({
   }, [visible, type, leadReload]);
 
   const fields: Record<string, Array<{ key: string; label: string; hint?: string; multiline?: boolean }>> = {
-    leads: [
-      { key: "customerName", label: "Customer name" },
-      { key: "mobileNumber", label: "Mobile number" },
-      { key: "alternateNumber", label: "Alternate number (optional)" },
-      { key: "state", label: "State ID", hint: "Choose the state in Geography and paste its ID." },
-      { key: "district", label: "District ID" },
-      { key: "branch", label: "Branch ID" },
-      { key: "blockOrTehsil", label: "Block / Tehsil (optional)" },
-      { key: "siteAddress", label: "Site address", multiline: true },
-    ],
     amc: [
       { key: "customerId", label: "Customer ID", hint: "Open a customer record to find its ID." },
       { key: "startDate", label: "Start date (YYYY-MM-DD)" },
@@ -811,24 +810,8 @@ function CreateRecordModal({
     let payload: RecordValue = {};
     try {
       if (type === "leads") {
-        if (value("customerName").length < 2 || !/^\+?[0-9]{10,15}$/.test(value("mobileNumber"))) {
-          throw new Error("Enter a customer name and a valid 10–15 digit mobile number.");
-        }
-        if (![value("state"), value("district"), value("branch")].every(objectId)) {
-          throw new Error("Enter valid 24-character state, district, and branch IDs.");
-        }
-        if (value("siteAddress").length < 3) throw new Error("Enter a site address.");
         path = "/leads";
-        payload = {
-          customerName: value("customerName"),
-          mobileNumber: value("mobileNumber"),
-          alternateNumber: value("alternateNumber") || undefined,
-          state: value("state"),
-          district: value("district"),
-          branch: value("branch"),
-          blockOrTehsil: value("blockOrTehsil") || undefined,
-          siteAddress: value("siteAddress"),
-        };
+        payload = createLeadPayload(values);
       } else if (type === "visits") {
         if (!objectId(value("leadId"))) throw new Error("Choose a lead for this visit.");
         if (!value("remark") || value("remark").length > 2000) {
@@ -889,7 +872,7 @@ function CreateRecordModal({
             </Pressable>
           </View>
           <ScrollView className="max-h-[75%]" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            {type === "visits" ? <>
+            {type === "leads" ? <LeadCreateFields values={values} disabled={busy} onChange={update=>setValues(current=>({...current,...update}))}/> : type === "visits" ? <>
               <SelectField label="Lead" value={values.leadId ?? ""} options={leads} placeholder="Choose lead" loading={leadsLoading} onChange={(leadId) => setValues((current) => ({ ...current, leadId }))} />
               {leadsError ? <ErrorNotice message={leadsError} onRetry={() => setLeadReload((current) => current + 1)} /> : null}
               {!leadsLoading && !leadsError && !leads.length ? <Text className="mb-4 text-xs text-brand-muted">No leads available in your access scope.</Text> : null}
@@ -1071,9 +1054,9 @@ export default function RecordsScreen({
             <Heading eyebrow={config.eyebrow} title={config.title} description={organizationView ? `View all ${config.title.toLowerCase()} across the organization.` : config.description} onBack={onBack} />
           </View>
           {config.canCreate && (type !== "channel-partners" || roleCode === "RM") ? (
-            <Pressable accessibilityRole="button" accessibilityLabel={type === "visits" ? "New visit" : (type === "employees" || type === "channel-partners") ? (type === "channel-partners" ? "New CP" : "New employee") : `New ${config.title.toLowerCase()}`} onPress={() => setCreating(true)} className={`mt-8 h-10 flex-row items-center justify-center gap-1.5 rounded-xl bg-brand-navy ${type === "visits" || (type === "employees" || type === "channel-partners") ? "px-3" : "w-10"}`}>
+            <Pressable accessibilityRole="button" accessibilityLabel={type === "leads" ? "New lead" : type === "visits" ? "New visit" : (type === "employees" || type === "channel-partners") ? (type === "channel-partners" ? "New CP" : "New employee") : `New ${config.title.toLowerCase()}`} onPress={() => setCreating(true)} className={`mt-8 h-10 flex-row items-center justify-center gap-1.5 rounded-xl bg-brand-navy ${type === "leads" || type === "visits" || (type === "employees" || type === "channel-partners") ? "px-3" : "w-10"}`}>
               <Plus size={19} color="white" />
-              {type === "visits" || (type === "employees" || type === "channel-partners") ? <Text className="text-xs font-bold text-white">{type === "visits" ? "New visit" : type === "channel-partners" ? "New CP" : "New employee"}</Text> : null}
+              {type === "leads" || type === "visits" || (type === "employees" || type === "channel-partners") ? <Text className="text-xs font-bold text-white">{type === "leads" ? "New lead" : type === "visits" ? "New visit" : type === "channel-partners" ? "New CP" : "New employee"}</Text> : null}
             </Pressable>
           ) : null}
         </View>
@@ -1132,7 +1115,9 @@ export default function RecordsScreen({
             </View>
           ) : null}
           {error ? <ErrorNotice message={error} onRetry={() => void load()} /> : null}
-          {loading ? <LoadingState label={`Loading ${config.title.toLowerCase()}…`} /> : rows.length ? (
+          {loading ? <LoadingState label={`Loading ${config.title.toLowerCase()}…`} /> : rows.length ? type === "employees" ? (
+            <EmployeeDirectoryTable rows={rows} columns={visibleColumns} display={formatValue} onSelect={setSelected}/>
+          ) : (
             <View className="gap-2">
               {rows.map((row, index) => {
                 const status = row.status ?? row.isActive;
@@ -1141,7 +1126,7 @@ export default function RecordsScreen({
                     key={String(row._id ?? row.id ?? index)}
                     onPress={() => setSelected(row)}
                     accessibilityRole="button"
-                    accessibilityLabel={type === "visits" ? `View site visit for ${formatValue(row.lead)}` : type === "customers" ? `View customer ${primaryLabel(row)}` : type === "quotations" ? `View quotation ${formatValue(row.quotationNumber)}` : (type === "employees" || type === "channel-partners") ? `View employee ${primaryLabel(row)}` : undefined}
+                    accessibilityLabel={type === "visits" ? `View site visit for ${formatValue(row.lead)}` : type === "customers" ? `View customer ${primaryLabel(row)}` : type === "quotations" ? `View quotation ${formatValue(row.quotationNumber)}` : (type === "channel-partners") ? `View employee ${primaryLabel(row)}` : undefined}
                     accessibilityHint={type === "leads" ? "Open lead details and actions" : type === "visits" ? "Open site visit details, editing, and history" : type === "customers" ? "Open customer details, documents, and activity" : undefined}
                     className="rounded-xl border border-brand-line bg-white p-3.5"
                   >
@@ -1149,8 +1134,8 @@ export default function RecordsScreen({
                       <Text className="flex-1 text-sm font-bold text-brand-ink">{type === "visits" ? formatValue(row.lead) : type === "quotations" ? formatValue(row.quotationNumber) : primaryLabel(row)}</Text>
                       <View className="flex-row items-center gap-2">
                         {status !== undefined ? (
-                          <Text className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${(type === "employees" || type === "channel-partners") && status === false ? "bg-brand-canvas text-brand-muted" : "bg-emerald-50 text-emerald-800"}`}>
-                            {(type === "employees" || type === "channel-partners") && typeof status === "boolean" ? status ? "Active" : "Inactive" : formatValue(status)}
+                          <Text className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${(type === "channel-partners") && status === false ? "bg-brand-canvas text-brand-muted" : "bg-emerald-50 text-emerald-800"}`}>
+                            {(type === "channel-partners") && typeof status === "boolean" ? status ? "Active" : "Inactive" : formatValue(status)}
                           </Text>
                         ) : null}
                         {type === "leads" || showFullColumns ? <ArrowUpRight size={17} color="#17247a" /> : null}

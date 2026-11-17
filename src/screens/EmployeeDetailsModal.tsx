@@ -1,3 +1,4 @@
+import EmployeeProfileImageEditor from '../components/EmployeeProfileImageEditor';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { Clock3, X } from "lucide-react-native";
@@ -55,6 +56,7 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
   const [values, setValues] = useState<Record<string, string>>({});
   const [managerId, setManagerId] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState("");
   const [hierarchy, setHierarchy] = useState<RecordValue[] | null>(null);
@@ -110,11 +112,11 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
       const url = new URL(response.data.url);
       if (!["https:", "http:"].includes(url.protocol)) throw new Error("The API returned an invalid profile image URL.");
       setImageUrl(url.toString());
-    } catch (cause) { if (current === imageRequest.current) setImageError(cause instanceof Error ? cause.message : "Unable to load profile image."); }
+    } catch (cause) { if (current === imageRequest.current) setImageError((cause as {status?: number})?.status === 404 ? "No profile image is saved. Use Change / add profile image to upload one." : cause instanceof Error ? cause.message : "Unable to load profile image."); }
     finally { if (current === imageRequest.current) setImageLoading(false); }
   }, [path]);
-  const hasImage = isRecord(record?.profileImage);
-  useEffect(() => { if (hasImage) void loadImage(); }, [hasImage, loadImage]);
+  const hasImage = isRecord(record?.profileImage) && Boolean(record.profileImage.key || record.profileImage.url);
+  useEffect(() => { if (hasImage) void loadImage(); }, [hasImage, record?.profileImage, loadImage]);
 
   async function loadHierarchy() {
     setHierarchyLoading(true); setHierarchyError("");
@@ -199,9 +201,10 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
             <ActionButton label="Activate" kind="secondary" disabled={busy || record.isActive === true} onPress={() => void directAction("activate")} />
             <ActionButton label="Deactivate" kind="secondary" disabled={busy || record.isActive === false} onPress={() => void directAction("deactivate")} />
             <ActionButton label="Resend invitation" kind="secondary" disabled={busy} onPress={() => void directAction("resend-invitation")} />
-            <ActionButton label="Profile image" kind="secondary" disabled={imageLoading} onPress={() => void loadImage()} />
+            <ActionButton label="Profile image" kind="secondary" disabled={imageLoading} onPress={() => { setImagePreviewOpen(true); void loadImage(); }} />
             <ActionButton label="Reporting hierarchy" icon={Clock3} kind="secondary" disabled={hierarchyLoading} onPress={() => void loadHierarchy()} />
           </View>
+          <EmployeeProfileImageEditor key={employeeId} employeeId={employeeId} onSaved={async()=>{await load();onSaved();}}/>
           {actionError ? <ErrorNotice message={actionError} /> : null}
           {action ? <Card className="mb-4"><Text className="mb-3 text-base font-bold text-brand-ink">{action === "edit" ? `Edit ${entity.toLowerCase()}` : "Change reporting manager"}</Text>
             {action === "edit" ? editFields.map((field) => field.key === "branch" ? <SelectField key={field.key} label={field.label} value={values.branch ?? ""} options={branches} placeholder="No branch" disabled={busy} loading={branchesLoading} onChange={(value) => setValues(current => ({ ...current, branch: value }))} /> : <Field key={field.key} label={field.label} accessibilityLabel={field.label} maxLength={field.max} editable={!busy} keyboardType={field.key === "mobileNumber" ? "phone-pad" : "default"} autoCapitalize={field.key === "branch" ? "none" : "words"} value={values[field.key] ?? ""} onChangeText={(value) => setValues((current) => ({ ...current, [field.key]: value }))} />) : <Field label="Reporting manager ID" accessibilityLabel="Reporting manager ID" autoCapitalize="none" maxLength={24} editable={!busy} value={managerId} onChangeText={setManagerId} />}
@@ -225,6 +228,15 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
         </> : null}
       </ScrollView>
     </View></View>
+  <Modal transparent animationType="fade" visible={imagePreviewOpen} onRequestClose={() => setImagePreviewOpen(false)}>
+    <View className="flex-1 justify-center bg-black/60 p-5"><View className="rounded-2xl bg-white p-5">
+      <View className="mb-4 flex-row items-center justify-between"><Text className="text-lg font-bold text-brand-ink">Profile image</Text><Pressable accessibilityRole="button" accessibilityLabel="Close profile image" onPress={() => setImagePreviewOpen(false)} className="p-2"><X size={22}/></Pressable></View>
+      {imageLoading ? <LoadingState label="Loading profile image..."/> : null}
+      {imageError ? <ErrorNotice message={imageError} onRetry={() => void loadImage()}/> : null}
+      {imageUrl ? <Image accessibilityLabel={`${entity} profile image`} source={{uri:imageUrl}} resizeMode="contain" style={{width:"100%",height:300}} onError={() => {setImageUrl("");setImageError("The saved photo could not be loaded. Retry, or replace it using Change / add profile image.");}}/> : null}
+      <View className="mt-4"><ActionButton label="Refresh image" kind="secondary" disabled={imageLoading} onPress={() => void loadImage()}/></View>
+    </View></View>
+  </Modal>
   {convertCustomer ? <CpCustomerConversionModal cpId={employeeId} onClose={() => setConvertCustomer(false)} onSaved={() => { setConvertCustomer(false); setNotice("Customer created and linked to this channel partner."); onSaved(); void reload(); }}/> : null}
   {customerHistory && recordId(record?.sourceCustomer) ? <CustomerDetailsModal customerId={recordId(record?.sourceCustomer)} onClose={() => setCustomerHistory(false)} onSaved={() => { void load(); }}/> : null}
 </Modal>

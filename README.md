@@ -100,3 +100,14 @@ More > Channel Partners is a separate CP directory. Employees excludes CPs in al
 ## CP scheduled phone notifications
 
 RM, CP Head and MD manage schedules from More -> CP notifications; MIS can view. CPs read messages through their bell. Native phone push is prepared but needs an Expo/EAS project ID and push credentials before use. Set `EXPO_PUBLIC_EAS_PROJECT_ID` for the build, configure FCM/APNs in the Expo project and install a new development or production build with the `expo-notifications` plugin. Expo Go cannot receive remote push. CPs enable phone notifications from their bell and grant OS permission. Without that setup, scheduled messages remain available in the bell inbox. See backend `CP_NOTIFICATIONS.md` for the full setup and delivery behavior.
+
+## API configuration when the website moves to Vercel
+
+Set `EXPO_PUBLIC_API_URL` to the absolute HTTPS backend address including `/api/v1` before building, for example `https://api.example.com/api/v1` (replace the domain). Use the same backend as the website's `VITE_API_URL`. Rebuild native apps after changing this value. A Vercel website deployment does not change or publish the native app automatically. Backend imports, allocation and scheduled notifications continue running on the persistent backend server.
+
+
+### Local employee-detail development API
+
+An ignored `.env.development.local` points Expo development to the same backend as the local web app, using this computer's Wi-Fi address on port 5000. Keep the phone and computer on the same Wi-Fi network and run `sunvika_Management_Backend_copy`. If the computer's IP address changes, update that local file and restart Expo.
+
+Production exports use the public `EXPO_PUBLIC_API_URL` from `.env`; the development override is not loaded for production. The public backend must also receive the employee photo routes before production photo editing can work.
