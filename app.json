@@ -1,7 +1,12 @@
 {
   "expo": {
     "name": "Sunvika Management",
-    "slug": "sunvika-management",
+    "slug": "sunvikamanagement",
+    "extra": {
+      "eas": {
+        "projectId": "96e83983-7411-497a-9b55-7d9e353c83f2"
+      }
+    },
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",

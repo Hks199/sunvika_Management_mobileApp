@@ -1,0 +1,15 @@
+node_modules/
+.expo/
+.git/
+.idea/
+.agents/
+.codex/
+.aws/
+dist/
+dist-*/
+web-build/
+artifacts/
+.env
+.env.*
+npm-debug.log*
+*.tsbuildinfo

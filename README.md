@@ -2,6 +2,37 @@
 
 React Native app for the Sunvika Management workspace. It uses Expo, TypeScript, and NativeWind, and calls the same versioned backend API as the web frontend.
 
+## Installable Android builds
+
+The app configuration references Expo project `96e83983-7411-497a-9b55-7d9e353c83f2`. Sign in to an Expo account with access to that project:
+
+```sh
+npx eas-cli@latest login
+npx eas-cli@latest init --id 96e83983-7411-497a-9b55-7d9e353c83f2
+```
+
+Build an APK to install directly on staff Android phones:
+
+```sh
+npx eas-cli@latest build --platform android --profile preview
+```
+
+Build an Android App Bundle for Google Play:
+
+```sh
+npx eas-cli@latest build --platform android --profile production
+```
+
+The build profiles pin the public HTTPS API address. Local `.env` files are excluded from cloud build uploads. Installed release builds include the JavaScript bundle and run without Expo Go, Metro, or the development PC; the backend must remain online. Install and test the APK before sharing it. Keep the Android signing credentials for future updates.
+
+After configuring the Play Console app and submission credentials, submit the production Android build:
+
+```sh
+npx eas-cli@latest submit --platform android --profile production
+```
+
+Phone push notifications still require FCM/APNs credentials; linking the Expo project alone does not finish push setup.
+
 ## Run locally
 
 1. Install Node.js and the project dependencies:
