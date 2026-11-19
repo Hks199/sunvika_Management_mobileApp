@@ -6,13 +6,13 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          navy: "#17247a",
-          deep: "#10184f",
-          orange: "#ef7418",
-          canvas: "#f6f7fc",
-          ink: "#17204f",
+          navy: "#080875",
+          deep: "#07075c",
+          orange: "#ff7000",
+          canvas: "#f5f6fc",
+          ink: "#171b4b",
           muted: "#78819b",
-          line: "#e5e8f2",
+          line: "#e3e5f2",
         },
       },
     },

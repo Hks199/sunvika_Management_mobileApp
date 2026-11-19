@@ -29,7 +29,7 @@ export function Page({
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       refreshControl={refresh ? (
-        <RefreshControl refreshing={refresh.refreshing} onRefresh={refresh.onRefresh} tintColor="#17247a" />
+        <RefreshControl refreshing={refresh.refreshing} onRefresh={refresh.onRefresh} tintColor="#080875" />
       ) : undefined}
     >
       {children}
@@ -52,7 +52,7 @@ export function Heading({
     <View className="mb-5">
       {onBack ? (
         <Pressable onPress={onBack} className="mb-3 flex-row items-center self-start">
-          <ChevronLeft size={17} color="#17247a" />
+          <ChevronLeft size={17} color="#080875" />
           <Text className="font-semibold text-brand-navy">Back</Text>
         </Pressable>
       ) : null}
@@ -89,7 +89,7 @@ export function ActionButton({
       onPress={onPress}
       className={`min-h-11 flex-row items-center justify-center gap-2 rounded-xl px-4 ${style} ${disabled ? "opacity-50" : ""}`}
     >
-      {Icon ? <Icon size={16} color={kind === "primary" ? "#ffffff" : kind === "danger" ? "#b91c1c" : "#17204f"} /> : null}
+      {Icon ? <Icon size={16} color={kind === "primary" ? "#ffffff" : kind === "danger" ? "#b91c1c" : "#171b4b"} /> : null}
       <Text className={`text-sm font-bold ${textStyle}`}>{label}</Text>
     </Pressable>
   );
@@ -134,10 +134,10 @@ export function ErrorNotice({ message, onRetry }: { message: string; onRetry?: (
   );
 }
 
-export function LoadingState({ label = "Loading…" }: { label?: string }) {
+export function LoadingState({ label = "Loadingâ€¦" }: { label?: string }) {
   return (
     <View className="items-center justify-center py-12">
-      <ActivityIndicator color="#17247a" />
+      <ActivityIndicator color="#080875" />
       <Text className="mt-3 text-sm text-brand-muted">{label}</Text>
     </View>
   );
@@ -169,7 +169,7 @@ export function RefreshAction({ onPress, loading = false }: { onPress: () => voi
       onPress={onPress}
       className="h-10 w-10 items-center justify-center rounded-xl border border-brand-line bg-white"
     >
-      <RefreshCw size={17} color="#17247a" />
+      <RefreshCw size={17} color="#080875" />
     </Pressable>
   );
 }

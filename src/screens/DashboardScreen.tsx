@@ -1,3 +1,4 @@
+import { branchPipeline } from "../branch-pipeline";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import {
@@ -18,10 +19,6 @@ import { Card, ErrorNotice, Heading, LoadingState, Page, SectionTitle } from "..
 
 function object(value: unknown): RecordValue {
   return value && typeof value === "object" && !Array.isArray(value) ? value as RecordValue : {};
-}
-
-function rows(value: unknown): RecordValue[] {
-  return Array.isArray(value) ? value.filter((row): row is RecordValue => Boolean(row) && typeof row === "object") : [];
 }
 
 function count(value: unknown): string {
@@ -58,7 +55,7 @@ export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: S
   const leads = object(summary?.leads);
   const customers = object(summary?.customers);
   const quotations = object(summary?.quotations);
-  const branches = rows(summary?.branchPerformance);
+  const branches = branchPipeline(summary?.branchPerformance);
   const maxLeads = Math.max(1, ...branches.map((branch) => typeof branch.leads === "number" ? branch.leads : 0));
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -110,24 +107,31 @@ export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: S
             </View>
           }
         />
-        <Text className="mb-4 text-xs text-brand-muted">Leads and conversions from the dashboard API</Text>
+        <Text className="mb-4 text-xs text-brand-muted">Total leads and leads converted to customers within your access.</Text>
         {loading && !summary ? <LoadingState label="Loading branch performance…" /> : branches.length ? (
-          branches.slice(0, 8).map((branch, index) => {
-            const total = typeof branch.leads === "number" ? branch.leads : 0;
-            const converted = typeof branch.converted === "number" ? branch.converted : 0;
+          branches.map((branch) => {
+            const total = branch.leads;
+            const converted = branch.converted;
             return (
-              <View key={String(branch._id ?? branch.name ?? index)} className="mb-4">
+              <View key={branch._id} className="mb-4">
                 <View className="mb-1.5 flex-row justify-between gap-2">
-                  <Text numberOfLines={1} className="flex-1 text-xs font-semibold text-brand-ink">{String(branch.name ?? "Unassigned branch")}</Text>
+                  <Text numberOfLines={1} className="flex-1 text-xs font-semibold text-brand-ink">{branch.name}</Text>
                   <Text className="text-[10px] text-brand-muted">{count(converted)} converted · {count(total)} leads</Text>
                 </View>
-                <View className="h-2 overflow-hidden rounded-full bg-indigo-50">
-                  <View className="h-full rounded-full bg-brand-navy" style={{ width: `${Math.min(100, total / maxLeads * 100)}%` }} />
+                <View accessibilityRole="image" accessibilityLabel={`${count(total)} total leads`} className="mb-1 h-2 overflow-hidden rounded-full bg-indigo-50">
+                  <View className="h-full rounded-full" style={{ backgroundColor:"#159e79", width: `${Math.min(100, (total ?? 0) / maxLeads * 100)}%` }} />
+                </View>
+                <View accessibilityRole="image" accessibilityLabel={`${count(converted)} leads converted to customers`} className="h-2 overflow-hidden rounded-full bg-indigo-50">
+                  <View className="h-full rounded-full" style={{ backgroundColor:"#8292a9", width: `${Math.min(100, (converted ?? 0) / maxLeads * 100)}%` }} />
                 </View>
               </View>
             );
           })
         ) : <Text className="py-5 text-center text-sm text-brand-muted">No branch performance data is available for this account.</Text>}
+        <View className="mt-2 flex-row flex-wrap gap-3">
+          <View className="flex-row items-center gap-1.5"><View className="h-2 w-2 rounded-full" style={{backgroundColor:"#159e79"}}/><Text className="text-[10px] text-brand-muted">Total leads</Text></View>
+          <View className="flex-row items-center gap-1.5"><View className="h-2 w-2 rounded-full" style={{backgroundColor:"#8292a9"}}/><Text className="text-[10px] text-brand-muted">Converted to customers</Text></View>
+        </View>
       </Card>
 
       <Card className="mb-4">
