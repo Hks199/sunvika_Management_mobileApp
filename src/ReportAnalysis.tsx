@@ -1,0 +1,20 @@
+import { Text, View } from 'react-native';
+import { analyzeReport, reportCell } from './report-analysis';
+import { ActionButton } from './ui';
+
+export default function ReportAnalysis({ kind, data, onPage, busy }: { kind: string; data: unknown; onPage: (page: number) => void; busy: boolean }) {
+  const report = analyzeReport(kind, data);
+  const max = Math.max(1, ...report.bars.map(item => Math.max(item.value, item.converted ?? 0)));
+  const canNext = report.total !== undefined ? report.page * report.limit < report.total : report.rows.length === report.limit;
+  if (!report.rows.length) return <View className="items-center py-8"><Text className="text-sm font-semibold text-brand-ink dark:text-slate-100">No records found</Text><Text className="mt-1 text-center text-xs text-brand-muted dark:text-slate-400">Try another date range or filter.</Text>{report.paginated && report.page > 1 ? <View className="mt-4"><ActionButton label="Previous page" kind="secondary" disabled={busy} onPress={() => onPage(report.page - 1)} /></View> : null}</View>;
+  return <View>
+    <Text className="mb-3 text-xs leading-5 text-brand-muted dark:text-slate-400">{report.paginated ? 'Analysis and chart reflect the records on this page.' : 'Analysis reflects all matching lead statuses.'}</Text>
+    <View className="mb-5 flex-row flex-wrap gap-2">{report.metrics.map(metric => <View key={metric.label} className="min-w-[100px] flex-1 rounded-xl bg-brand-canvas p-3 dark:bg-slate-950"><Text className="text-[10px] text-brand-muted dark:text-slate-400">{metric.label}</Text><Text className="mt-1 text-xl font-bold text-brand-ink dark:text-slate-100">{metric.value}</Text></View>)}</View>
+    <Text className="text-base font-bold text-brand-ink dark:text-slate-100">{report.barLabel}</Text>
+    {report.bars.some(item => item.converted !== undefined) ? <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">Navy: leads · Orange: converted</Text> : null}
+    <View className="mb-5 mt-4 gap-4">{report.bars.map((item, index) => <View key={`${item.label}-${index}`}><View className="mb-1 flex-row justify-between gap-2"><Text className="flex-1 text-xs text-brand-ink dark:text-slate-100">{item.label}</Text><Text className="text-xs font-semibold text-brand-ink dark:text-slate-100">{item.value.toLocaleString('en-IN')}{item.converted !== undefined ? ` / ${item.converted.toLocaleString('en-IN')} converted` : ''}</Text></View><View className="h-3 overflow-hidden rounded-full bg-indigo-100 dark:bg-slate-700"><View style={{ width: `${Math.max(0, item.value) / max * 100}%` }} className="absolute bottom-0 left-0 top-0 rounded-full bg-indigo-700 dark:bg-indigo-400" />{item.converted !== undefined ? <View style={{ width: `${Math.max(0, item.converted) / max * 100}%`, height: 6, top: 3 }} className="absolute left-0 rounded-full bg-orange-500" /> : null}</View></View>)}</View>
+    <Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">Report details</Text>
+    {report.rows.map((row, index) => <View key={String(row._id ?? index)} className="mb-2 rounded-xl border border-brand-line p-3 dark:border-slate-700">{report.columns.map(column => <View key={column.key} className="flex-row justify-between gap-3 py-1"><Text className="flex-1 text-xs text-brand-muted dark:text-slate-400">{column.label}</Text><Text className="flex-1 text-right text-xs font-semibold text-brand-ink dark:text-slate-100">{reportCell(row, column.key)}</Text></View>)}</View>)}
+    {report.paginated ? <View className="mt-3 flex-row items-center justify-between gap-2"><ActionButton label="Previous" kind="secondary" disabled={busy || report.page <= 1} onPress={() => onPage(report.page - 1)} /><Text className="text-xs text-brand-muted dark:text-slate-400">Page {report.page}{report.total !== undefined ? ` of ${Math.max(1, Math.ceil(report.total / report.limit))}` : ''}</Text><ActionButton label="Next" kind="secondary" disabled={busy || !canNext} onPress={() => onPage(report.page + 1)} /></View> : null}
+  </View>;
+}

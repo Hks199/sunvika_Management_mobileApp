@@ -6,6 +6,7 @@ import { api } from "../api";
 import type { ModuleKey, RecordValue } from "../types";
 import { ActionButton, Card, EmptyState, ErrorNotice, Field, Heading, LoadingState, Page, SectionTitle } from "../ui";
 import GeographyScreen from "./GeographyScreen";
+import ReportAnalysis from "../ReportAnalysis";
 
 function list(data: unknown): RecordValue[] {
   if (Array.isArray(data)) return data.filter((item): item is RecordValue => Boolean(item) && typeof item === "object");
@@ -13,11 +14,6 @@ function list(data: unknown): RecordValue[] {
     return data.data.filter((item): item is RecordValue => Boolean(item) && typeof item === "object");
   }
   return [];
-}
-
-function safeJson(value: unknown): string {
-  const hidden = new Set(["passwordHash", "failedLoginAttempts", "lockedUntil", "s3Key", "uploadId", "tokenHash", "refreshToken"]);
-  return JSON.stringify(value, (key, item: unknown) => hidden.has(key) ? undefined : item, 2);
 }
 
 const reportOptions = [
@@ -36,16 +32,15 @@ function ReportsScreen({ onBack }: { onBack: () => void }) {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [result, setResult] = useState<unknown>(null);
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function generate() {
+  async function fetchReport(queryString: string, page = 1) {
     setBusy(true);
     setError("");
-    setResult(null);
-    const query = new URLSearchParams();
-    if (dateFrom.trim()) query.set("dateFrom", dateFrom.trim());
-    if (dateTo.trim()) query.set("dateTo", dateTo.trim());
+    const query = new URLSearchParams(queryString);
+    if (kind !== "lead-conversion") query.set("page", String(page));
     try {
       const response = await api.get<unknown>(`/reports/${kind}${query.size ? `?${query.toString()}` : ""}`);
       setResult(response.data);
@@ -56,20 +51,30 @@ function ReportsScreen({ onBack }: { onBack: () => void }) {
     }
   }
 
+  async function generate() {
+    const query = new URLSearchParams();
+    if (dateFrom.trim()) query.set("dateFrom", dateFrom.trim());
+    if (dateTo.trim()) query.set("dateTo", dateTo.trim());
+    setResult(null);
+    setSubmittedQuery(query.toString());
+    await fetchReport(query.toString());
+  }
+
   return (
     <Page>
       <Heading eyebrow="INSIGHTS & ANALYSIS" title="Reports" description="Generate live analytics from your management workspace." onBack={onBack} />
       <Card className="mb-4">
         <SectionTitle title="Choose a report" />
-        <Text className="mb-2 text-xs text-brand-muted">Filters are validated against your access scope.</Text>
+        <Text className="mb-2 text-xs text-brand-muted dark:text-slate-400">Filters are validated against your access scope.</Text>
         <View className="mb-4 flex-row flex-wrap gap-2">
           {reportOptions.map(([value, label]) => (
             <Pressable
               key={value}
+              disabled={busy}
               onPress={() => { setKind(value); setResult(null); }}
-              className={`rounded-full px-3 py-2 ${kind === value ? "bg-brand-navy" : "bg-brand-canvas"}`}
+              className={`rounded-full px-3 py-2 ${kind === value ? "bg-brand-navy" : "bg-brand-canvas dark:bg-slate-950"}`}
             >
-              <Text className={`text-xs font-semibold ${kind === value ? "text-white" : "text-brand-ink"}`}>{label}</Text>
+              <Text className={`text-xs font-semibold ${kind === value ? "text-white" : "text-brand-ink dark:text-slate-100"}`}>{label}</Text>
             </Pressable>
           ))}
         </View>
@@ -81,7 +86,7 @@ function ReportsScreen({ onBack }: { onBack: () => void }) {
       <Card>
         <SectionTitle title={reportOptions.find(([value]) => value === kind)?.[1] ?? "Report results"} />
         {busy ? <LoadingState label="Generating report…" /> : result !== null ? (
-          <Text selectable className="rounded-xl bg-brand-canvas p-3 font-mono text-[10px] leading-4 text-brand-ink">{safeJson(result)}</Text>
+          <ReportAnalysis kind={kind} data={result} onPage={page => void fetchReport(submittedQuery, page)} busy={busy} />
         ) : <EmptyState label="Your report will appear here" />}
       </Card>
     </Page>
@@ -129,15 +134,15 @@ function RolesScreen({ onBack }: { onBack: () => void }) {
         {loading && !roles.length ? <LoadingState /> : roles.length ? (
           <View className="gap-2">
             {roles.map((role, index) => (
-              <View key={String(role._id ?? index)} className="rounded-xl border border-brand-line p-3.5">
+              <View key={String(role._id ?? index)} className="rounded-xl border border-brand-line dark:border-slate-700 p-3.5">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-sm font-bold text-brand-ink">{String(role.name ?? "Role")}</Text>
-                  <Text className={`text-[10px] font-semibold ${role.isActive === false ? "text-brand-muted" : "text-emerald-700"}`}>
+                  <Text className="text-sm font-bold text-brand-ink dark:text-slate-100">{String(role.name ?? "Role")}</Text>
+                  <Text className={`text-[10px] font-semibold ${role.isActive === false ? "text-brand-muted dark:text-slate-400" : "text-emerald-700"}`}>
                     {role.isActive === false ? "Inactive" : "Active"}
                   </Text>
                 </View>
-                <Text className="mt-1 text-[10px] text-brand-muted">{String(role.code ?? "—")}</Text>
-                <Text className="mt-2 text-xs leading-5 text-brand-ink">
+                <Text className="mt-1 text-[10px] text-brand-muted dark:text-slate-400">{String(role.code ?? "—")}</Text>
+                <Text className="mt-2 text-xs leading-5 text-brand-ink dark:text-slate-100">
                   {Array.isArray(role.permissions) ? role.permissions.map((item) => typeof item === "object" && item && "code" in item ? String(item.code) : String(item)).join(", ") || "No permissions listed" : "No permissions listed"}
                 </Text>
               </View>
@@ -206,13 +211,13 @@ function SessionsScreen({ onBack }: { onBack: () => void }) {
         <SectionTitle title="Signed-in devices" action={<ShieldCheck size={18} color="#17247a" />} />
         {error ? <ErrorNotice message={error} onRetry={() => void load()} /> : null}
         {loading && !sessions.length ? <LoadingState /> : sessions.length ? sessions.map((session, index) => (
-          <View key={String(session._id ?? session.id ?? index)} className="mb-3 flex-row items-center rounded-xl border border-brand-line p-3">
+          <View key={String(session._id ?? session.id ?? index)} className="mb-3 flex-row items-center rounded-xl border border-brand-line dark:border-slate-700 p-3">
             <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
               <ShieldCheck size={18} color="#17247a" />
             </View>
             <View className="flex-1 pr-2">
-              <Text numberOfLines={1} className="text-xs font-bold text-brand-ink">{String(session.deviceName ?? session.userAgent ?? "Browser session")}</Text>
-              <Text className="mt-1 text-[10px] text-brand-muted">{String(session.createdAt ?? session.lastUsedAt ?? "Session active")}</Text>
+              <Text numberOfLines={1} className="text-xs font-bold text-brand-ink dark:text-slate-100">{String(session.deviceName ?? session.userAgent ?? "Browser session")}</Text>
+              <Text className="mt-1 text-[10px] text-brand-muted dark:text-slate-400">{String(session.createdAt ?? session.lastUsedAt ?? "Session active")}</Text>
             </View>
             <Pressable
               accessibilityLabel="Revoke session"
@@ -225,7 +230,7 @@ function SessionsScreen({ onBack }: { onBack: () => void }) {
           </View>
         )) : <EmptyState label="No session details are available." />}
       </Card>
-      <Text className="mt-3 px-1 text-[10px] leading-4 text-brand-muted">Revoke a device to end its access to your account.</Text>
+      <Text className="mt-3 px-1 text-[10px] leading-4 text-brand-muted dark:text-slate-400">Revoke a device to end its access to your account.</Text>
     </Page>
   );
 }
