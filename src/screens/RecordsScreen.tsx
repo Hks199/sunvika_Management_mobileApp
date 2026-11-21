@@ -410,15 +410,15 @@ function LeadDetailsModal({
   return (
     <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
       <View className="flex-1 justify-end bg-black/40">
-        <View className="max-h-[92%] rounded-t-3xl bg-brand-canvas px-5 pb-8 pt-5">
+        <View className="max-h-[92%] rounded-t-3xl bg-brand-canvas dark:bg-slate-950 px-5 pb-8 pt-5">
           <View className="mb-4 flex-row items-center justify-between">
             <View className="flex-1 pr-3">
-              <Text className="text-[10px] font-bold tracking-wide text-brand-navy">LEAD DETAILS</Text>
-              <Text numberOfLines={2} className="mt-1 text-xl font-bold text-brand-ink">
+              <Text className="text-[10px] font-bold tracking-wide text-brand-navy dark:text-indigo-200">LEAD DETAILS</Text>
+              <Text numberOfLines={2} className="mt-1 text-xl font-bold text-brand-ink dark:text-slate-100">
                 {record ? primaryLabel(record) : "Loading lead…"}
               </Text>
             </View>
-            <Pressable accessibilityLabel="Close lead details" onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white">
+            <Pressable accessibilityLabel="Close lead details" onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800">
               <X size={19} color="#17204f" />
             </Pressable>
           </View>
@@ -437,14 +437,14 @@ function LeadDetailsModal({
                 </View>
                 {action ? (
                   <Card className="mb-4">
-                    <Text className="mb-3 text-base font-bold text-brand-ink">{actionTitle}</Text>
+                    <Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">{actionTitle}</Text>
                     {action === "status" ? (
                       <>
-                        <Text className="mb-2 text-xs font-semibold text-brand-ink">New status</Text>
+                        <Text className="mb-2 text-xs font-semibold text-brand-ink dark:text-slate-100">New status</Text>
                         <View className="mb-3 flex-row flex-wrap gap-2">
                           {leadStatuses.map((item) => (
-                            <Pressable key={item} onPress={() => { setStatus(item); setGenerateQuotation(false); }} className={`rounded-full px-3 py-2 ${status === item ? "bg-brand-navy" : "bg-brand-canvas"}`}>
-                              <Text className={`text-xs font-semibold ${status === item ? "text-white" : "text-brand-ink"}`}>{formatValue(item)}</Text>
+                            <Pressable key={item} onPress={() => { setStatus(item); setGenerateQuotation(false); }} className={`rounded-full px-3 py-2 ${status === item ? "bg-brand-navy" : "bg-brand-canvas dark:bg-slate-950"}`}>
+                              <Text className={`text-xs font-semibold ${status === item ? "text-white" : "text-brand-ink dark:text-slate-100"}`}>{formatValue(item)}</Text>
                             </Pressable>
                           ))}
                         </View>
@@ -455,10 +455,10 @@ function LeadDetailsModal({
                         {status === "QUOTATION_SENT" ? (
                           <>
                             <Pressable onPress={() => setGenerateQuotation((current) => !current)} className="mb-3 flex-row items-center gap-2">
-                              <View className={`h-5 w-5 items-center justify-center rounded border ${generateQuotation ? "border-brand-navy bg-brand-navy" : "border-brand-line bg-white"}`}>
+                              <View className={`h-5 w-5 items-center justify-center rounded border ${generateQuotation ? "border-brand-navy bg-brand-navy" : "border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800"}`}>
                                 {generateQuotation ? <Text className="text-xs font-bold text-white">✓</Text> : null}
                               </View>
-                              <Text className="text-sm font-semibold text-brand-ink">Generate quotation now</Text>
+                              <Text className="text-sm font-semibold text-brand-ink dark:text-slate-100">Generate quotation now</Text>
                             </Pressable>
                             {generateQuotation ? (
                               <>
@@ -488,7 +488,7 @@ function LeadDetailsModal({
                     ) : null}
                     {action === "convert" ? (
                       <>
-                        <Text className="mb-3 text-xs leading-5 text-brand-muted">Upload one PDF, JPEG, PNG, or WebP document for each required type. Maximum file size: 20 MB.</Text>
+                        <Text className="mb-3 text-xs leading-5 text-brand-muted dark:text-slate-400">Upload one PDF, JPEG, PNG, or WebP document for each required type. Maximum file size: 20 MB.</Text>
                         <Field label="Capacity (kW)" keyboardType="decimal-pad" onChangeText={(text) => setValue("requiredCapacityKW", text)} value={values.requiredCapacityKW ?? ""} />
                         <Field label="Rate per kW" keyboardType="decimal-pad" onChangeText={(text) => setValue("ratePerKW", text)} value={values.ratePerKW ?? ""} />
                         <Field label="Payment mode" maxLength={100} onChangeText={(text) => setValue("paymentMode", text)} value={values.paymentMode ?? ""} />
@@ -497,9 +497,9 @@ function LeadDetailsModal({
                         <Field label="Conversion note" maxLength={1000} multiline numberOfLines={3} onChangeText={(text) => setValue("remark", text)} value={values.remark ?? ""} />
                         {conversionDocumentTypes.map((documentType) => (
                           <View key={documentType} className="mb-3">
-                            <Text className="mb-1.5 text-xs font-semibold text-brand-ink">{formatValue(documentType)} document</Text>
-                            <Pressable onPress={() => void pickDocument(documentType)} className="min-h-11 justify-center rounded-xl border border-brand-line bg-white px-3.5 py-3">
-                              <Text numberOfLines={1} className="text-sm text-brand-ink">{documents[documentType]?.name ?? "Choose file (required)"}</Text>
+                            <Text className="mb-1.5 text-xs font-semibold text-brand-ink dark:text-slate-100">{formatValue(documentType)} document</Text>
+                            <Pressable onPress={() => void pickDocument(documentType)} className="min-h-11 justify-center rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-3">
+                              <Text numberOfLines={1} className="text-sm text-brand-ink dark:text-slate-100">{documents[documentType]?.name ?? "Choose file (required)"}</Text>
                             </Pressable>
                           </View>
                         ))}
@@ -512,32 +512,32 @@ function LeadDetailsModal({
                   </Card>
                 ) : null}
                 <Card className="mb-4">
-                  <Text className="mb-2 text-base font-bold text-brand-ink">Lead information</Text>
+                  <Text className="mb-2 text-base font-bold text-brand-ink dark:text-slate-100">Lead information</Text>
                   {Object.entries(record)
                     .filter(([key, value]) => key !== "__v" && !privateKeys.has(key) && value !== undefined)
                     .map(([key, value]) => (
-                      <View key={key} className="border-b border-brand-line py-3">
-                        <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted">{key.replace(/([A-Z])/g, " $1")}</Text>
-                        <Text className="mt-1 text-sm leading-5 text-brand-ink">{formatValue(value)}</Text>
+                      <View key={key} className="border-b border-brand-line dark:border-slate-700 py-3">
+                        <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted dark:text-slate-400">{key.replace(/([A-Z])/g, " $1")}</Text>
+                        <Text className="mt-1 text-sm leading-5 text-brand-ink dark:text-slate-100">{formatValue(value)}</Text>
                       </View>
                     ))}
                 </Card>
                 {historyLoaded || historyLoading ? (
                   <Card className="mb-4">
-                    <Text className="mb-2 text-base font-bold text-brand-ink">Status history</Text>
+                    <Text className="mb-2 text-base font-bold text-brand-ink dark:text-slate-100">Status history</Text>
                     {historyLoading ? <LoadingState label="Loading status history…" /> : history.map((entry, index) => {
                       const changedBy = entry.changedBy && typeof entry.changedBy === "object" ? entry.changedBy as RecordValue : {};
                       const name = [changedBy.firstName, changedBy.lastName].filter((part): part is string => typeof part === "string" && Boolean(part)).join(" ");
                       return (
-                        <View key={String(entry._id ?? index)} className="border-b border-brand-line py-3">
-                          <Text className="text-sm font-bold text-brand-ink">{formatValue(entry.previousStatus)} → {formatValue(entry.newStatus)}</Text>
-                          <Text className="mt-1 text-xs text-brand-muted">{formatValue(entry.changedAt)}{name ? ` · ${name}` : ""}</Text>
-                          {typeof entry.remark === "string" ? <Text className="mt-1 text-sm text-brand-ink">Note: {entry.remark}</Text> : null}
-                          {entry.nextFollowUpDate ? <Text className="mt-1 text-xs text-brand-muted">Next follow-up: {formatValue(entry.nextFollowUpDate)}</Text> : null}
+                        <View key={String(entry._id ?? index)} className="border-b border-brand-line dark:border-slate-700 py-3">
+                          <Text className="text-sm font-bold text-brand-ink dark:text-slate-100">{formatValue(entry.previousStatus)} → {formatValue(entry.newStatus)}</Text>
+                          <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">{formatValue(entry.changedAt)}{name ? ` · ${name}` : ""}</Text>
+                          {typeof entry.remark === "string" ? <Text className="mt-1 text-sm text-brand-ink dark:text-slate-100">Note: {entry.remark}</Text> : null}
+                          {entry.nextFollowUpDate ? <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">Next follow-up: {formatValue(entry.nextFollowUpDate)}</Text> : null}
                         </View>
                       );
                     })}
-                    {!historyLoading && !history.length ? <Text className="py-2 text-sm text-brand-muted">No status changes have been recorded for this lead yet.</Text> : null}
+                    {!historyLoading && !history.length ? <Text className="py-2 text-sm text-brand-muted dark:text-slate-400">No status changes have been recorded for this lead yet.</Text> : null}
                   </Card>
                 ) : null}
               </>
@@ -672,15 +672,15 @@ function VisitDetailsModal({
   return (
     <Modal animationType="slide" onRequestClose={() => { if (!busy) onClose(); }} transparent visible={visible}>
       <View className="flex-1 justify-end bg-black/40">
-        <View className="max-h-[92%] rounded-t-3xl bg-brand-canvas px-5 pb-8 pt-5">
+        <View className="max-h-[92%] rounded-t-3xl bg-brand-canvas dark:bg-slate-950 px-5 pb-8 pt-5">
           <View className="mb-4 flex-row items-center justify-between">
             <View className="flex-1 pr-3">
-              <Text className="text-[10px] font-bold tracking-wide text-brand-navy">SITE VISIT DETAILS</Text>
-              <Text numberOfLines={2} className="mt-1 text-xl font-bold text-brand-ink">
+              <Text className="text-[10px] font-bold tracking-wide text-brand-navy dark:text-indigo-200">SITE VISIT DETAILS</Text>
+              <Text numberOfLines={2} className="mt-1 text-xl font-bold text-brand-ink dark:text-slate-100">
                 {record ? formatVisitDateTime(record.visitDate) : "Loading site visit…"}
               </Text>
             </View>
-            <Pressable accessibilityLabel="Close site visit details" disabled={busy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white">
+            <Pressable accessibilityLabel="Close site visit details" disabled={busy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800">
               <X size={19} color="#17204f" />
             </Pressable>
           </View>
@@ -706,7 +706,7 @@ function VisitDetailsModal({
                 </View>
                 {editing ? (
                   <Card className="mb-4">
-                    <Text className="mb-3 text-base font-bold text-brand-ink">Update site visit</Text>
+                    <Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">Update site visit</Text>
                     <DateField label="Visit date" includeTime disabled={busy} onChange={(text) => setValues((current) => ({ ...current, visitDate: text }))} value={values.visitDate} />
                     <DateField label="Next visit (optional)" includeTime disabled={busy} onChange={(text) => setValues((current) => ({ ...current, nextVisitDate: text }))} value={values.nextVisitDate} />
                     <Field label="Visit remarks" editable={!busy} maxLength={2000} multiline numberOfLines={4} onChangeText={(text) => setValues((current) => ({ ...current, remark: text }))} value={values.remark} />
@@ -714,31 +714,31 @@ function VisitDetailsModal({
                   </Card>
                 ) : null}
                 <Card className="mb-4">
-                  <Text className="mb-2 text-base font-bold text-brand-ink">Visit information</Text>
+                  <Text className="mb-2 text-base font-bold text-brand-ink dark:text-slate-100">Visit information</Text>
                   {Object.entries(record)
                     .filter(([key, value]) => !hiddenVisitField.test(key) && !privateKeys.has(key) && value !== undefined)
                     .map(([key, value]) => (
-                      <View key={key} className="border-b border-brand-line py-3">
-                        <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted">{key.replace(/([A-Z])/g, " $1")}</Text>
-                        <Text className="mt-1 text-sm leading-5 text-brand-ink">{visitDetailValue(value)}</Text>
+                      <View key={key} className="border-b border-brand-line dark:border-slate-700 py-3">
+                        <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted dark:text-slate-400">{key.replace(/([A-Z])/g, " $1")}</Text>
+                        <Text className="mt-1 text-sm leading-5 text-brand-ink dark:text-slate-100">{visitDetailValue(value)}</Text>
                       </View>
                     ))}
                 </Card>
                 {historyLabel ? (
                   <Card className="mb-4">
-                    <Text className="mb-2 text-base font-bold text-brand-ink">{historyLabel}</Text>
-                    <Text className="mb-3 text-xs leading-5 text-brand-muted">{historyKind === "lead" ? "Visits for this lead, including visits by different employees." : "Visits made by this employee across all accessible leads."}</Text>
+                    <Text className="mb-2 text-base font-bold text-brand-ink dark:text-slate-100">{historyLabel}</Text>
+                    <Text className="mb-3 text-xs leading-5 text-brand-muted dark:text-slate-400">{historyKind === "lead" ? "Visits for this lead, including visits by different employees." : "Visits made by this employee across all accessible leads."}</Text>
                     {historyError ? <ErrorNotice message={historyError} onRetry={() => {if(historyKind)void loadVisitHistory(historyKind);}}/> : null}
                     {historyLoading ? <LoadingState label="Loading visit history…" /> : history.length ? history.map((visit, index) => (
-                      <View key={String(visit._id ?? index)} className="border-b border-brand-line py-3">
-                        <Text className="text-sm font-bold text-brand-ink">Visit · {formatVisitDateTime(visit.visitDate)}</Text>
-                        {visit.lead ? <Text className="mt-1 text-xs text-brand-muted">Lead: {formatValue(visit.lead)}</Text> : null}
-                        {visit.lead && typeof visit.lead === "object" && "leadCode" in visit.lead ? <Text className="mt-1 text-xs text-brand-muted">Lead code: {String(visit.lead.leadCode)}</Text> : null}
-                        {typeof visit.remark === "string" ? <Text className="mt-1 text-sm text-brand-ink">Note: {visit.remark}</Text> : null}
-                        {visit.nextVisitDate ? <Text className="mt-1 text-xs text-brand-muted">Next visit: {formatVisitDateTime(visit.nextVisitDate)}</Text> : null}
-                        {visit.visitedBy ? <Text className="mt-1 text-xs text-brand-muted">Visited by {formatValue(visit.visitedBy)}</Text> : null}
+                      <View key={String(visit._id ?? index)} className="border-b border-brand-line dark:border-slate-700 py-3">
+                        <Text className="text-sm font-bold text-brand-ink dark:text-slate-100">Visit · {formatVisitDateTime(visit.visitDate)}</Text>
+                        {visit.lead ? <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">Lead: {formatValue(visit.lead)}</Text> : null}
+                        {visit.lead && typeof visit.lead === "object" && "leadCode" in visit.lead ? <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">Lead code: {String(visit.lead.leadCode)}</Text> : null}
+                        {typeof visit.remark === "string" ? <Text className="mt-1 text-sm text-brand-ink dark:text-slate-100">Note: {visit.remark}</Text> : null}
+                        {visit.nextVisitDate ? <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">Next visit: {formatVisitDateTime(visit.nextVisitDate)}</Text> : null}
+                        {visit.visitedBy ? <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">Visited by {formatValue(visit.visitedBy)}</Text> : null}
                       </View>
-                    )) : !historyError ? <Text className="py-2 text-sm text-brand-muted">No related site visits were found.</Text> : null}
+                    )) : !historyError ? <Text className="py-2 text-sm text-brand-muted dark:text-slate-400">No related site visits were found.</Text> : null}
                   </Card>
                 ) : null}
               </>
@@ -861,13 +861,13 @@ function CreateRecordModal({
   return (
     <Modal animationType="slide" onRequestClose={() => { if (!busy) onClose(); }} transparent visible={visible}>
       <View className="flex-1 justify-end bg-black/40">
-        <View className="max-h-[90%] rounded-t-3xl bg-brand-canvas px-5 pb-8 pt-5">
+        <View className="max-h-[90%] rounded-t-3xl bg-brand-canvas dark:bg-slate-950 px-5 pb-8 pt-5">
           <View className="mb-4 flex-row items-center justify-between">
             <View>
-              <Text className="text-[10px] font-bold tracking-[1.4px] text-brand-navy">NEW RECORD</Text>
-              <Text className="mt-1 text-xl font-bold text-brand-ink">{title}</Text>
+              <Text className="text-[10px] font-bold tracking-[1.4px] text-brand-navy dark:text-indigo-200">NEW RECORD</Text>
+              <Text className="mt-1 text-xl font-bold text-brand-ink dark:text-slate-100">{title}</Text>
             </View>
-            <Pressable accessibilityLabel="Close new record" disabled={busy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white">
+            <Pressable accessibilityLabel="Close new record" disabled={busy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800">
               <X size={19} color="#17204f" />
             </Pressable>
           </View>
@@ -875,7 +875,7 @@ function CreateRecordModal({
             {type === "leads" ? <LeadCreateFields values={values} disabled={busy} onChange={update=>setValues(current=>({...current,...update}))}/> : type === "visits" ? <>
               <SelectField label="Lead" value={values.leadId ?? ""} options={leads} placeholder="Choose lead" loading={leadsLoading} onChange={(leadId) => setValues((current) => ({ ...current, leadId }))} />
               {leadsError ? <ErrorNotice message={leadsError} onRetry={() => setLeadReload((current) => current + 1)} /> : null}
-              {!leadsLoading && !leadsError && !leads.length ? <Text className="mb-4 text-xs text-brand-muted">No leads available in your access scope.</Text> : null}
+              {!leadsLoading && !leadsError && !leads.length ? <Text className="mb-4 text-xs text-brand-muted dark:text-slate-400">No leads available in your access scope.</Text> : null}
               <DateField label="Visit date" includeTime value={values.visitDate ?? ""} onChange={(visitDate) => setValues((current) => ({ ...current, visitDate }))} />
               <DateField label="Next visit (optional)" includeTime value={values.nextVisitDate ?? ""} onChange={(nextVisitDate) => setValues((current) => ({ ...current, nextVisitDate }))} />
               <Field label="Visit remarks" multiline numberOfLines={4} maxLength={2000} value={values.remark ?? ""} onChangeText={(remark) => setValues((current) => ({ ...current, remark }))} />
@@ -1063,18 +1063,18 @@ export default function RecordsScreen({
         {type === "channel-partners" && ["MD", "CP_HEAD", "RM"].includes(roleCode ?? "") ? <CpBulkImport onImported={() => void load()}/> : null}
         <Card className="mb-4">
           <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-base font-bold text-brand-ink">{config.title}</Text>
+            <Text className="text-base font-bold text-brand-ink dark:text-slate-100">{config.title}</Text>
             <View className="flex-row items-center gap-3">
-              <Text className="text-xs text-brand-muted">{total.toLocaleString()} total</Text>
+              <Text className="text-xs text-brand-muted dark:text-slate-400">{total.toLocaleString()} total</Text>
               {showFullColumns ? <RefreshAction loading={loading} onPress={() => void load()} /> : null}
             </View>
           </View>
           {config.searchable ? (
-            <View className="mb-3 flex-row items-center rounded-xl border border-brand-line bg-white px-3">
+            <View className="mb-3 flex-row items-center rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 px-3">
               <Search size={16} color="#78819b" />
               <TextInput
                 accessibilityLabel={`Search ${config.title}`}
-                className="ml-2 min-h-11 flex-1 text-sm text-brand-ink"
+                className="ml-2 min-h-11 flex-1 text-sm text-brand-ink dark:text-slate-100"
                 maxLength={100}
                 onChangeText={(value) => { setPage(1); setSearch(value); }}
                 editable={searchEnabled}
@@ -1086,8 +1086,8 @@ export default function RecordsScreen({
           ) : null}
           {supportsFilters ? <>
             {type === "leads" || type === "visits" || isEmployeeDirectory ? <SelectField label="Record view" value={mode} options={(config.modes ?? []).map((item) => ({ value: item.value, label: organizationView && item.value === "downline" ? "Organization team" : item.label }))} placeholder="Choose view" onChange={(value) => { setMode(value || "all"); setPage(1); }} /> : null}
-            <View className="mb-3 border-b border-brand-line pb-1">
-              <Text className="mb-3 text-sm font-bold text-brand-ink">Filters</Text>
+            <View className="mb-3 border-b border-brand-line dark:border-slate-700 pb-1">
+              <Text className="mb-3 text-sm font-bold text-brand-ink dark:text-slate-100">Filters</Text>
               <SelectField label="State" value={filters.stateId} options={states} placeholder="All states" loading={geographyLoading.states} onChange={(value) => changeFilter("stateId", value)} />
               <SelectField label="District" value={filters.districtId} options={districts} placeholder="All districts" disabled={!filters.stateId && !isEmployeeDirectory} loading={geographyLoading.districts} onChange={(value) => changeFilter("districtId", value)} />
               <SelectField label="Branch" value={filters.branchId} options={branches} placeholder="All branches" disabled={!filters.districtId && !isEmployeeDirectory} loading={geographyLoading.branches} onChange={(value) => changeFilter("branchId", value)} />
@@ -1107,9 +1107,9 @@ export default function RecordsScreen({
                 <Pressable
                   key={item.value}
                   onPress={() => { setPage(1); setMode(item.value); }}
-                  className={`rounded-full px-3 py-2 ${mode === item.value ? "bg-brand-navy" : "bg-brand-canvas"}`}
+                  className={`rounded-full px-3 py-2 ${mode === item.value ? "bg-brand-navy" : "bg-brand-canvas dark:bg-slate-950"}`}
                 >
-                  <Text className={`text-xs font-semibold ${mode === item.value ? "text-white" : "text-brand-ink"}`}>{item.label}</Text>
+                  <Text className={`text-xs font-semibold ${mode === item.value ? "text-white" : "text-brand-ink dark:text-slate-100"}`}>{item.label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -1128,13 +1128,13 @@ export default function RecordsScreen({
                     accessibilityRole="button"
                     accessibilityLabel={type === "visits" ? `View site visit for ${formatValue(row.lead)}` : type === "customers" ? `View customer ${primaryLabel(row)}` : type === "quotations" ? `View quotation ${formatValue(row.quotationNumber)}` : (type === "channel-partners") ? `View employee ${primaryLabel(row)}` : undefined}
                     accessibilityHint={type === "leads" ? "Open lead details and actions" : type === "visits" ? "Open site visit details, editing, and history" : type === "customers" ? "Open customer details, documents, and activity" : undefined}
-                    className="rounded-xl border border-brand-line bg-white p-3.5"
+                    className="rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5"
                   >
                     <View className="mb-2 flex-row items-start justify-between gap-3">
-                      <Text className="flex-1 text-sm font-bold text-brand-ink">{type === "visits" ? formatValue(row.lead) : type === "quotations" ? formatValue(row.quotationNumber) : primaryLabel(row)}</Text>
+                      <Text className="flex-1 text-sm font-bold text-brand-ink dark:text-slate-100">{type === "visits" ? formatValue(row.lead) : type === "quotations" ? formatValue(row.quotationNumber) : primaryLabel(row)}</Text>
                       <View className="flex-row items-center gap-2">
                         {status !== undefined ? (
-                          <Text className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${(type === "channel-partners") && status === false ? "bg-brand-canvas text-brand-muted" : "bg-emerald-50 text-emerald-800"}`}>
+                          <Text className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${(type === "channel-partners") && status === false ? "bg-brand-canvas dark:bg-slate-950 text-brand-muted dark:text-slate-400" : "bg-emerald-50 text-emerald-800"}`}>
                             {(type === "channel-partners") && typeof status === "boolean" ? status ? "Active" : "Inactive" : formatValue(status)}
                           </Text>
                         ) : null}
@@ -1143,12 +1143,12 @@ export default function RecordsScreen({
                     </View>
                     {showFullColumns ? <View className="gap-2">
                       {visibleColumns.map((column) => <View key={column} className="flex-row gap-3">
-                        <Text className="w-24 text-xs text-brand-muted">{column.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toUpperCase())}</Text>
-                        <Text className="flex-1 text-xs leading-5 text-brand-ink">{formatValue(row[column])}</Text>
+                        <Text className="w-24 text-xs text-brand-muted dark:text-slate-400">{column.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toUpperCase())}</Text>
+                        <Text className="flex-1 text-xs leading-5 text-brand-ink dark:text-slate-100">{formatValue(row[column])}</Text>
                       </View>)}
                     </View> : <View className="flex-row flex-wrap gap-x-4 gap-y-1">
                       {visibleColumns.filter((column) => column !== "status" && column !== "isActive").slice(0, 3).map((column) => (
-                        <Text key={column} numberOfLines={1} className="max-w-[48%] text-[10px] text-brand-muted">
+                        <Text key={column} numberOfLines={1} className="max-w-[48%] text-[10px] text-brand-muted dark:text-slate-400">
                           {column.replace(/([A-Z])/g, " $1")}: {formatValue(row[column])}
                         </Text>
                       ))}
@@ -1158,23 +1158,23 @@ export default function RecordsScreen({
               })}
             </View>
           ) : !loading ? <EmptyState label={error ? "No records to display" : "Nothing here yet"} /> : null}
-          <View className="mt-4 flex-row items-center justify-between border-t border-brand-line pt-3">
-            <Text className="text-xs text-brand-muted">{showFullColumns ? `Showing ${rows.length ? (page - 1) * 20 + 1 : 0}–${rows.length ? (page - 1) * 20 + rows.length : 0} of ${total.toLocaleString()}` : `Page ${page} · ${total.toLocaleString()} records`}</Text>
+          <View className="mt-4 flex-row items-center justify-between border-t border-brand-line dark:border-slate-700 pt-3">
+            <Text className="text-xs text-brand-muted dark:text-slate-400">{showFullColumns ? `Showing ${rows.length ? (page - 1) * 20 + 1 : 0}–${rows.length ? (page - 1) * 20 + rows.length : 0} of ${total.toLocaleString()}` : `Page ${page} · ${total.toLocaleString()} records`}</Text>
             <View className="flex-row gap-2">
               <Pressable
                 accessibilityLabel="Previous page"
                 disabled={page <= 1 || loading}
                 onPress={() => setPage((value) => Math.max(1, value - 1))}
-                className="h-9 w-9 items-center justify-center rounded-lg border border-brand-line bg-white disabled:opacity-40"
+                className="h-9 w-9 items-center justify-center rounded-lg border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-40"
               >
                 <ChevronLeft size={17} color="#17204f" />
               </Pressable>
-              {showFullColumns ? <Text className="self-center text-xs text-brand-muted">Page {page}</Text> : null}
+              {showFullColumns ? <Text className="self-center text-xs text-brand-muted dark:text-slate-400">Page {page}</Text> : null}
               <Pressable
                 accessibilityLabel="Next page"
                 disabled={page * 20 >= total || loading}
                 onPress={() => setPage((value) => value + 1)}
-                className="h-9 w-9 items-center justify-center rounded-lg border border-brand-line bg-white disabled:opacity-40"
+                className="h-9 w-9 items-center justify-center rounded-lg border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-40"
               >
                 <ChevronRight size={17} color="#17204f" />
               </Pressable>
@@ -1229,13 +1229,13 @@ export default function RecordsScreen({
       /> : null}
       {type !== "leads" && type !== "visits" && type !== "customers" && type !== "quotations" && type !== "employees" && type !== "channel-partners" ? <Modal animationType="slide" onRequestClose={() => setSelected(null)} transparent visible={Boolean(selected)}>
         <View className="flex-1 justify-end bg-black/40">
-          <View className="max-h-[85%] rounded-t-3xl bg-brand-canvas px-5 pb-8 pt-5">
+          <View className="max-h-[85%] rounded-t-3xl bg-brand-canvas dark:bg-slate-950 px-5 pb-8 pt-5">
             <View className="mb-4 flex-row items-center justify-between">
               <View className="flex-1 pr-3">
-                <Text className="text-[10px] font-bold tracking-wide text-brand-navy">{config.title.toUpperCase()} DETAILS</Text>
-                <Text numberOfLines={2} className="mt-1 text-xl font-bold text-brand-ink">{selected ? primaryLabel(selected) : ""}</Text>
+                <Text className="text-[10px] font-bold tracking-wide text-brand-navy dark:text-indigo-200">{config.title.toUpperCase()} DETAILS</Text>
+                <Text numberOfLines={2} className="mt-1 text-xl font-bold text-brand-ink dark:text-slate-100">{selected ? primaryLabel(selected) : ""}</Text>
               </View>
-              <Pressable onPress={() => setSelected(null)} className="h-10 w-10 items-center justify-center rounded-full bg-white">
+              <Pressable onPress={() => setSelected(null)} className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800">
                 <X size={19} color="#17204f" />
               </Pressable>
             </View>
@@ -1243,9 +1243,9 @@ export default function RecordsScreen({
               {selected ? Object.entries(selected)
                 .filter(([key]) => key !== "__v" && !privateKeys.has(key))
                 .map(([key, value]) => (
-                  <View key={key} className="border-b border-brand-line py-3">
-                    <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted">{key.replace(/([A-Z])/g, " $1")}</Text>
-                    <Text className="mt-1 text-sm leading-5 text-brand-ink">{formatValue(value)}</Text>
+                  <View key={key} className="border-b border-brand-line dark:border-slate-700 py-3">
+                    <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted dark:text-slate-400">{key.replace(/([A-Z])/g, " $1")}</Text>
+                    <Text className="mt-1 text-sm leading-5 text-brand-ink dark:text-slate-100">{formatValue(value)}</Text>
                   </View>
                 )) : null}
             </View>

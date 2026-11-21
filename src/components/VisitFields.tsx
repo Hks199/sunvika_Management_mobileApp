@@ -21,29 +21,29 @@ export function SelectField({ label, value, options, placeholder, searchPlacehol
   const filtered = options.filter((option) => option.label.toLowerCase().includes(search.trim().toLowerCase()));
   return (
     <View className="mb-4">
-      <Text className="mb-1.5 text-xs font-semibold text-brand-ink">{label}</Text>
+      <Text className="mb-1.5 text-xs font-semibold text-brand-ink dark:text-slate-100">{label}</Text>
       <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: disabled || loading, expanded: open }} disabled={disabled || loading}
         onPress={() => { setSearch(""); setOpen(true); }}
-        className={`min-h-12 flex-row items-center justify-between gap-2 rounded-xl border border-brand-line bg-white px-3.5 py-3 ${disabled || loading ? "opacity-50" : ""}`}>
-        <Text className={`flex-1 text-sm ${selected ? "text-brand-ink" : "text-brand-muted"}`}>{loading ? "Loading…" : selected?.label ?? placeholder}</Text>
+        className={`min-h-12 flex-row items-center justify-between gap-2 rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-3 ${disabled || loading ? "opacity-50" : ""}`}>
+        <Text className={`flex-1 text-sm ${selected ? "text-brand-ink dark:text-slate-100" : "text-brand-muted dark:text-slate-400"}`}>{loading ? "Loading…" : selected?.label ?? placeholder}</Text>
         <ChevronDown size={16} color="#78819b" />
       </Pressable>
       <Modal transparent animationType="slide" visible={open} onRequestClose={() => setOpen(false)}>
         <View className="flex-1 justify-end bg-black/40">
-          <View className="max-h-[80%] rounded-t-3xl bg-brand-canvas p-5 pb-8">
+          <View className="max-h-[80%] rounded-t-3xl bg-brand-canvas dark:bg-slate-950 p-5 pb-8">
             <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-lg font-bold text-brand-ink">{label}</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel={`Close ${label}`} onPress={() => setOpen(false)} className="h-10 w-10 items-center justify-center rounded-full bg-white"><X size={19} color="#17204f" /></Pressable>
+              <Text className="text-lg font-bold text-brand-ink dark:text-slate-100">{label}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Close ${label}`} onPress={() => setOpen(false)} className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800"><X size={19} color="#17204f" /></Pressable>
             </View>
-            <TextInput accessibilityLabel={`Search ${label.toLowerCase()}`} value={search} onChangeText={setSearch} placeholder={searchPlaceholder} placeholderTextColor="#78819b" className="mb-3 min-h-12 rounded-xl border border-brand-line bg-white px-3 text-sm text-brand-ink" />
+            <TextInput accessibilityLabel={`Search ${label.toLowerCase()}`} value={search} onChangeText={setSearch} placeholder={searchPlaceholder} placeholderTextColor="#78819b" className="mb-3 min-h-12 rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-brand-ink dark:text-slate-100" />
             <ScrollView keyboardShouldPersistTaps="handled">
               {[{ value: "", label: placeholder }, ...filtered].map((option) => (
-                <Pressable key={option.value} accessibilityRole="button" accessibilityState={{ selected: value === option.value }} onPress={() => { onChange(option.value); setOpen(false); }} className="min-h-12 flex-row items-center justify-between gap-3 border-b border-brand-line py-3">
-                  <Text className="flex-1 text-sm text-brand-ink">{option.label}</Text>
+                <Pressable key={option.value} accessibilityRole="button" accessibilityState={{ selected: value === option.value }} onPress={() => { onChange(option.value); setOpen(false); }} className="min-h-12 flex-row items-center justify-between gap-3 border-b border-brand-line dark:border-slate-700 py-3">
+                  <Text className="flex-1 text-sm text-brand-ink dark:text-slate-100">{option.label}</Text>
                   {value === option.value ? <Check size={17} color="#17247a" /> : null}
                 </Pressable>
               ))}
-              {!filtered.length ? <Text className="py-4 text-sm text-brand-muted">No matching options available.</Text> : null}
+              {!filtered.length ? <Text className="py-4 text-sm text-brand-muted dark:text-slate-400">No matching options available.</Text> : null}
             </ScrollView>
           </View>
         </View>
@@ -84,28 +84,28 @@ export function DateField({ label, value, onChange, includeTime = false, disable
   }
   return (
     <View className="mb-4">
-      <Text className="mb-1.5 text-xs font-semibold text-brand-ink">{label}</Text>
-      <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={show} className="min-h-12 flex-row items-center justify-between rounded-xl border border-brand-line bg-white px-3.5 py-3">
-        <Text className={`flex-1 text-sm ${value ? "text-brand-ink" : "text-brand-muted"}`}>{display}</Text><CalendarDays size={17} color="#78819b" />
+      <Text className="mb-1.5 text-xs font-semibold text-brand-ink dark:text-slate-100">{label}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={show} className="min-h-12 flex-row items-center justify-between rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-3">
+        <Text className={`flex-1 text-sm ${value ? "text-brand-ink dark:text-slate-100" : "text-brand-muted dark:text-slate-400"}`}>{display}</Text><CalendarDays size={17} color="#78819b" />
       </Pressable>
       <Modal transparent animationType="slide" visible={open} onRequestClose={() => setOpen(false)}>
         <View className="flex-1 justify-end bg-black/40">
-          <View className="rounded-t-3xl bg-brand-canvas p-5 pb-8">
-            <View className="mb-4 flex-row items-center justify-between"><Text className="text-lg font-bold text-brand-ink">{label}</Text><Pressable accessibilityRole="button" accessibilityLabel="Close date picker" onPress={() => setOpen(false)} className="h-10 w-10 items-center justify-center rounded-full bg-white"><X size={19} color="#17204f" /></Pressable></View>
+          <View className="rounded-t-3xl bg-brand-canvas dark:bg-slate-950 p-5 pb-8">
+            <View className="mb-4 flex-row items-center justify-between"><Text className="text-lg font-bold text-brand-ink dark:text-slate-100">{label}</Text><Pressable accessibilityRole="button" accessibilityLabel="Close date picker" onPress={() => setOpen(false)} className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800"><X size={19} color="#17204f" /></Pressable></View>
             <View className="mb-3 flex-row items-center justify-between">
               <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="h-11 w-11 items-center justify-center"><ChevronLeft size={20} color="#17247a" /></Pressable>
-              <Text className="font-bold text-brand-ink">{month.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}</Text>
+              <Text className="font-bold text-brand-ink dark:text-slate-100">{month.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}</Text>
               <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="h-11 w-11 items-center justify-center"><ChevronRight size={20} color="#17247a" /></Pressable>
             </View>
-            <View className="flex-row">{["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((name) => <View key={name} style={{ width: "14.2857%" }} className="items-center py-2"><Text className="text-xs text-brand-muted">{name}</Text></View>)}</View>
+            <View className="flex-row">{["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((name) => <View key={name} style={{ width: "14.2857%" }} className="items-center py-2"><Text className="text-xs text-brand-muted dark:text-slate-400">{name}</Text></View>)}</View>
             <View className="mb-4 flex-row flex-wrap">
               {Array.from({ length: offset + days }, (_, index) => {
                 const number = index - offset + 1;
                 const key = localDate(new Date(month.getFullYear(), month.getMonth(), number));
-                return <View key={index} style={{ width: "14.2857%" }} className="items-center py-0.5">{number > 0 ? <Pressable accessibilityRole="button" accessibilityLabel={key} accessibilityState={{ selected: day === key }} onPress={() => setDay(key)} className={`h-10 w-10 items-center justify-center rounded-full ${day === key ? "bg-brand-navy" : "bg-white"}`}><Text className={day === key ? "text-white" : "text-brand-ink"}>{number}</Text></Pressable> : <View className="h-10" />}</View>;
+                return <View key={index} style={{ width: "14.2857%" }} className="items-center py-0.5">{number > 0 ? <Pressable accessibilityRole="button" accessibilityLabel={key} accessibilityState={{ selected: day === key }} onPress={() => setDay(key)} className={`h-10 w-10 items-center justify-center rounded-full ${day === key ? "bg-brand-navy" : "bg-white dark:bg-slate-800"}`}><Text className={day === key ? "text-white" : "text-brand-ink dark:text-slate-100"}>{number}</Text></Pressable> : <View className="h-10" />}</View>;
               })}
             </View>
-            {includeTime ? <View className="mb-4"><Text className="mb-2 text-xs font-semibold text-brand-ink">Time (24-hour)</Text><View className="flex-row items-center gap-2"><TextInput accessibilityLabel="Hour" keyboardType="number-pad" maxLength={2} value={hour} onChangeText={setHour} className="h-12 w-16 rounded-xl border border-brand-line bg-white text-center text-brand-ink" /><Text>:</Text><TextInput accessibilityLabel="Minute" keyboardType="number-pad" maxLength={2} value={minute} onChangeText={setMinute} className="h-12 w-16 rounded-xl border border-brand-line bg-white text-center text-brand-ink" /></View>{!validTime ? <Text className="mt-2 text-xs text-red-800">Enter an hour from 0–23 and minutes from 0–59.</Text> : null}</View> : null}
+            {includeTime ? <View className="mb-4"><Text className="mb-2 text-xs font-semibold text-brand-ink dark:text-slate-100">Time (24-hour)</Text><View className="flex-row items-center gap-2"><TextInput accessibilityLabel="Hour" keyboardType="number-pad" maxLength={2} value={hour} onChangeText={setHour} className="h-12 w-16 rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 text-center text-brand-ink dark:text-slate-100" /><Text>:</Text><TextInput accessibilityLabel="Minute" keyboardType="number-pad" maxLength={2} value={minute} onChangeText={setMinute} className="h-12 w-16 rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 text-center text-brand-ink dark:text-slate-100" /></View>{!validTime ? <Text className="mt-2 text-xs text-red-800">Enter an hour from 0–23 and minutes from 0–59.</Text> : null}</View> : null}
             <View className="flex-row justify-end gap-2"><ActionButton label="Clear" kind="secondary" disabled={disabled} onPress={() => { onChange(""); setOpen(false); }} /><ActionButton label="Apply" disabled={disabled || !day || (includeTime && !validTime)} onPress={() => { onChange(includeTime ? `${day}T${hour.padStart(2, "0")}:${minute.padStart(2, "0")}` : day); setOpen(false); }} /></View>
           </View>
         </View>

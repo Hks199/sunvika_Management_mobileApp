@@ -60,7 +60,7 @@ export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: S
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const metrics: Array<{ title: string; value: unknown; icon: LucideIcon; tint: string }> = [
-    { title: "Total leads", value: leads.total, icon: ContactRound, tint: "bg-indigo-50 text-brand-navy" },
+    { title: "Total leads", value: leads.total, icon: ContactRound, tint: "bg-indigo-50 text-brand-navy dark:text-indigo-200" },
     { title: "Customers", value: customers.total, icon: Users, tint: "bg-emerald-50 text-emerald-700" },
     { title: "Site visits", value: summary?.siteVisits, icon: CalendarClock, tint: "bg-orange-50 text-orange-700" },
     { title: "Quotations", value: quotations.total, icon: FileText, tint: "bg-violet-50 text-violet-700" },
@@ -70,13 +70,13 @@ export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: S
     <Page refresh={{ refreshing: loading, onRefresh: () => void load() }}>
       <View className="mb-5 flex-row items-start justify-between gap-2">
         <View className="flex-1">
-          <Text className="mb-1 text-[10px] font-bold tracking-[1.7px] text-brand-navy">YOUR BUSINESS AT A GLANCE</Text>
-          <Text className="text-[26px] font-bold leading-8 text-brand-ink">
+          <Text className="mb-1 text-[10px] font-bold tracking-[1.7px] text-brand-navy dark:text-indigo-200">YOUR BUSINESS AT A GLANCE</Text>
+          <Text className="text-[26px] font-bold leading-8 text-brand-ink dark:text-slate-100">
             {greeting}, {user?.firstName || "there"} <Text className="text-brand-orange">✳</Text>
           </Text>
-          <Text className="mt-1 text-xs leading-5 text-brand-muted">Live totals and branch performance within your account scope.</Text>
+          <Text className="mt-1 text-xs leading-5 text-brand-muted dark:text-slate-400">Live totals and branch performance within your account scope.</Text>
         </View>
-        <Pressable onPress={() => void load()} className="mt-1 h-10 w-10 items-center justify-center rounded-xl border border-brand-line bg-white">
+        <Pressable onPress={() => void load()} className="mt-1 h-10 w-10 items-center justify-center rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800">
           <RefreshCw size={17} color="#17247a" />
         </Pressable>
       </View>
@@ -86,13 +86,13 @@ export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: S
         {metrics.map(({ title, value, icon: Icon, tint }) => (
           <Card key={title} className="w-[48%] p-3.5">
             <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-xs font-medium text-brand-muted">{title}</Text>
+              <Text className="text-xs font-medium text-brand-muted dark:text-slate-400">{title}</Text>
               <View className={`h-9 w-9 items-center justify-center rounded-xl ${tint.split(" ")[0]}`}>
                 <Icon size={17} color={tint.includes("emerald") ? "#047857" : tint.includes("orange") ? "#c65a0a" : tint.includes("violet") ? "#6d28d9" : "#17247a"} />
               </View>
             </View>
-            <Text className="text-[26px] font-bold text-brand-ink">{loading && !summary ? "…" : count(value)}</Text>
-            <Text className="mt-1 text-[10px] text-brand-muted">Scoped to your access</Text>
+            <Text className="text-[26px] font-bold text-brand-ink dark:text-slate-100">{loading && !summary ? "…" : count(value)}</Text>
+            <Text className="mt-1 text-[10px] text-brand-muted dark:text-slate-400">Scoped to your access</Text>
           </Card>
         ))}
       </View>
@@ -107,7 +107,7 @@ export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: S
             </View>
           }
         />
-        <Text className="mb-4 text-xs text-brand-muted">Total leads and leads converted to customers within your access.</Text>
+        <Text className="mb-4 text-xs text-brand-muted dark:text-slate-400">Total leads and leads converted to customers within your access.</Text>
         {loading && !summary ? <LoadingState label="Loading branch performance…" /> : branches.length ? (
           branches.map((branch) => {
             const total = branch.leads;
@@ -115,8 +115,8 @@ export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: S
             return (
               <View key={branch._id} className="mb-4">
                 <View className="mb-1.5 flex-row justify-between gap-2">
-                  <Text numberOfLines={1} className="flex-1 text-xs font-semibold text-brand-ink">{branch.name}</Text>
-                  <Text className="text-[10px] text-brand-muted">{count(converted)} converted · {count(total)} leads</Text>
+                  <Text numberOfLines={1} className="flex-1 text-xs font-semibold text-brand-ink dark:text-slate-100">{branch.name}</Text>
+                  <Text className="text-[10px] text-brand-muted dark:text-slate-400">{count(converted)} converted · {count(total)} leads</Text>
                 </View>
                 <View accessibilityRole="image" accessibilityLabel={`${count(total)} total leads`} className="mb-1 h-2 overflow-hidden rounded-full bg-indigo-50">
                   <View className="h-full rounded-full" style={{ backgroundColor:"#159e79", width: `${Math.min(100, (total ?? 0) / maxLeads * 100)}%` }} />
@@ -127,34 +127,34 @@ export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: S
               </View>
             );
           })
-        ) : <Text className="py-5 text-center text-sm text-brand-muted">No branch performance data is available for this account.</Text>}
+        ) : <Text className="py-5 text-center text-sm text-brand-muted dark:text-slate-400">No branch performance data is available for this account.</Text>}
         <View className="mt-2 flex-row flex-wrap gap-3">
-          <View className="flex-row items-center gap-1.5"><View className="h-2 w-2 rounded-full" style={{backgroundColor:"#159e79"}}/><Text className="text-[10px] text-brand-muted">Total leads</Text></View>
-          <View className="flex-row items-center gap-1.5"><View className="h-2 w-2 rounded-full" style={{backgroundColor:"#8292a9"}}/><Text className="text-[10px] text-brand-muted">Converted to customers</Text></View>
+          <View className="flex-row items-center gap-1.5"><View className="h-2 w-2 rounded-full" style={{backgroundColor:"#159e79"}}/><Text className="text-[10px] text-brand-muted dark:text-slate-400">Total leads</Text></View>
+          <View className="flex-row items-center gap-1.5"><View className="h-2 w-2 rounded-full" style={{backgroundColor:"#8292a9"}}/><Text className="text-[10px] text-brand-muted dark:text-slate-400">Converted to customers</Text></View>
         </View>
       </Card>
 
       <Card className="mb-4">
         <SectionTitle title="Today’s focus" />
-        <Text className="mb-3 text-xs text-brand-muted">Open your live work queues</Text>
+        <Text className="mb-3 text-xs text-brand-muted dark:text-slate-400">Open your live work queues</Text>
         {focusItems.map(({ title, caption, screen, icon: Icon, tone }) => (
           <Pressable
             key={screen}
             onPress={() => onNavigate(screen)}
-            className="mb-2 flex-row items-center rounded-xl border border-brand-line p-3"
+            className="mb-2 flex-row items-center rounded-xl border border-brand-line dark:border-slate-700 p-3"
           >
             <View className={`mr-3 h-10 w-10 items-center justify-center rounded-xl ${tone}`}>
               <Icon size={18} color="#17247a" />
             </View>
             <View className="flex-1">
-              <Text className="text-sm font-bold text-brand-ink">{title}</Text>
-              <Text className="mt-0.5 text-[10px] text-brand-muted">{caption}</Text>
+              <Text className="text-sm font-bold text-brand-ink dark:text-slate-100">{title}</Text>
+              <Text className="mt-0.5 text-[10px] text-brand-muted dark:text-slate-400">{caption}</Text>
             </View>
             <ArrowUpRight size={16} color="#78819b" />
           </Pressable>
         ))}
         <Pressable onPress={() => onNavigate("reports")} className="mt-2 flex-row items-center self-start">
-          <Text className="text-xs font-bold text-brand-navy">Explore reports</Text>
+          <Text className="text-xs font-bold text-brand-navy dark:text-indigo-200">Explore reports</Text>
           <ArrowUpRight size={14} color="#17247a" />
         </Pressable>
       </Card>

@@ -11,6 +11,7 @@ import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-
 import { API_HOST, api } from "../api";
 import { useAuth } from "../auth";
 import { ActionButton, ErrorNotice, Field } from "../ui";
+import { ThemeToggle } from "../theme";
 
 const logo = require("../../assets/SUNVIKA_Logo.png");
 
@@ -82,28 +83,29 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-brand-canvas"
+      className="flex-1 bg-brand-canvas dark:bg-slate-950"
     >
       <View className="flex-1 justify-center px-6 py-10">
+        <View className="mb-4 items-end"><ThemeToggle /></View>
         <View className="mb-7 items-center">
           <View className="mb-8 w-full items-center rounded-2xl bg-white px-5 py-4 shadow-sm">
             <Image source={logo} resizeMode="contain" className="h-14 w-56" />
           </View>
           <View className="w-full">
-            <Text className="mb-2 text-[10px] font-bold tracking-[1.7px] text-brand-navy">
+            <Text className="mb-2 text-[10px] font-bold tracking-[1.7px] text-brand-navy dark:text-indigo-200">
               {forgot ? "ACCOUNT RECOVERY" : "WELCOME BACK"}
             </Text>
-            <Text className="text-[28px] font-bold leading-9 text-brand-ink">
+            <Text className="text-[28px] font-bold leading-9 text-brand-ink dark:text-slate-100">
               {forgot ? "Reset your password" : "Sign in to your workspace"}
             </Text>
-            <Text className="mt-2 text-sm leading-5 text-brand-muted">
+            <Text className="mt-2 text-sm leading-5 text-brand-muted dark:text-slate-400">
               {forgot
                 ? "We’ll send instructions if an account matches that address."
                 : "Enter your work credentials to continue."}
             </Text>
           </View>
         </View>
-        <View className="rounded-2xl border border-brand-line bg-white p-5 shadow-sm">
+        <View className="rounded-2xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
           <Field
             label="Work email"
             autoCapitalize="none"
@@ -159,16 +161,16 @@ export default function LoginScreen() {
             }}
             className="mt-4 items-center py-2"
           >
-            <Text className="text-sm font-semibold text-brand-navy">
+            <Text className="text-sm font-semibold text-brand-navy dark:text-indigo-200">
               {forgot ? "Back to sign in" : "Forgot password?"}
             </Text>
           </Pressable>
         </View>
         <View className="mt-6 flex-row items-center justify-center gap-2">
           <ShieldCheck size={14} color="#78819b" />
-          <Text className="text-xs text-brand-muted">Secure, encrypted access</Text>
+          <Text className="text-xs text-brand-muted dark:text-slate-400">Secure, encrypted access</Text>
         </View>
-        <Text className="mt-2 text-center text-[10px] text-brand-muted">API target: {API_HOST}</Text>
+        <Text className="mt-2 text-center text-[10px] text-brand-muted dark:text-slate-400">API target: {API_HOST}</Text>
         <View className="mt-8 rounded-2xl bg-brand-deep px-5 py-4">
           <Text className="text-[10px] font-bold tracking-[1.5px] text-orange-300">SUNVIKA MANAGEMENT</Text>
           <Text className="mt-2 text-lg font-bold text-white">Good work moves us forward.</Text>

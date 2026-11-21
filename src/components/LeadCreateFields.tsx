@@ -48,6 +48,6 @@ export default function LeadCreateFields({values,onChange,disabled}: {
 function Location({label,value,choice,disabled,enabled,onChange}:{label:string;value:string;choice:ReturnType<typeof useChoices>;disabled:boolean;enabled:boolean;onChange:(value:string)=>void}) {
   return <>
     <SelectField label={label} value={value} options={choice.items} placeholder={`Choose ${label.toLowerCase()}`} disabled={disabled} loading={choice.loading} onChange={onChange}/>
-    {choice.error ? <ErrorNotice message={choice.error} onRetry={choice.retry}/> : enabled&&!choice.loading&&!choice.items.length ? <Text className="mb-3 text-xs text-brand-muted">No active {label.toLowerCase()==="branch"?"branches":label.toLowerCase()==="district"?"districts":"states"} available.</Text> : null}
+    {choice.error ? <ErrorNotice message={choice.error} onRetry={choice.retry}/> : enabled&&!choice.loading&&!choice.items.length ? <Text className="mb-3 text-xs text-brand-muted dark:text-slate-400">No active {label.toLowerCase()==="branch"?"branches":label.toLowerCase()==="district"?"districts":"states"} available.</Text> : null}
   </>;
 }

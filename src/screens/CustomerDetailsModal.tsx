@@ -49,9 +49,9 @@ function display(value: unknown): string {
 
 function Details({ record }: { record: RecordValue }) {
   return <>{Object.entries(record).filter(([key]) => !hiddenField.test(key)).map(([key, value]) => (
-    <View key={key} className="border-b border-brand-line py-3">
-      <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted">{label(key)}</Text>
-      <Text className="mt-1 text-sm leading-5 text-brand-ink">{display(value)}</Text>
+    <View key={key} className="border-b border-brand-line dark:border-slate-700 py-3">
+      <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted dark:text-slate-400">{label(key)}</Text>
+      <Text className="mt-1 text-sm leading-5 text-brand-ink dark:text-slate-100">{display(value)}</Text>
     </View>
   ))}</>;
 }
@@ -274,10 +274,10 @@ export default function CustomerDetailsModal({ customerId, onClose, onSaved }: {
     <>
     <Modal transparent animationType="slide" visible onRequestClose={() => { if (!busy && !documentBusy && !uploadBusy) onClose(); }}>
       <View className="flex-1 justify-end bg-black/40">
-        <View className="max-h-[92%] rounded-t-3xl bg-brand-canvas px-5 pb-8 pt-5">
+        <View className="max-h-[92%] rounded-t-3xl bg-brand-canvas dark:bg-slate-950 px-5 pb-8 pt-5">
           <View className="mb-4 flex-row items-center justify-between gap-3">
-            <View className="flex-1"><Text className="text-[10px] font-bold tracking-wide text-brand-navy">CUSTOMER DETAILS</Text><Text numberOfLines={2} className="mt-1 text-xl font-bold text-brand-ink">{record ? display(record.customerName) : "Loading customer…"}</Text></View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close customer details" disabled={busy || documentBusy || uploadBusy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white"><X size={19} color="#17204f" /></Pressable>
+            <View className="flex-1"><Text className="text-[10px] font-bold tracking-wide text-brand-navy dark:text-indigo-200">CUSTOMER DETAILS</Text><Text numberOfLines={2} className="mt-1 text-xl font-bold text-brand-ink dark:text-slate-100">{record ? display(record.customerName) : "Loading customer…"}</Text></View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close customer details" disabled={busy || documentBusy || uploadBusy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800"><X size={19} color="#17204f" /></Pressable>
           </View>
           <ScrollView className="max-h-[84%]" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {loading ? <LoadingState label="Loading customer details…" /> : null}
@@ -286,30 +286,30 @@ export default function CustomerDetailsModal({ customerId, onClose, onSaved }: {
               {notice ? <View className="mb-4 rounded-xl bg-emerald-50 p-3"><Text accessibilityRole="alert" className="text-sm text-emerald-800">{notice}</Text></View> : null}
               <View className="mb-4 self-start"><ActionButton label={editing ? "Cancel edit" : "Edit customer"} kind={editing ? "secondary" : "primary"} disabled={busy || documentBusy || uploadBusy} onPress={() => { if (editing) { setEditing(false); setActionError(""); } else startEdit(); }} /></View>
               {["MD", "CP_HEAD", "RM"].includes(roleCode ?? "") ? <View className="mb-4 self-start"><ActionButton label={record.cpEmployee ? "CP account created" : "Convert to CP"} disabled={Boolean(record.cpEmployee) || busy || documentBusy || uploadBusy} onPress={() => setConvertCp(true)}/></View> : null}
-              {["quotations", "amcContracts"].map(key => <Card key={key} className="mb-4"><Text className="mb-2 text-base font-bold text-brand-ink">{key === "quotations" ? "Quotation history" : "AMC history"}</Text>{rows(key).length ? rows(key).map((item, index) => <View key={String(item._id ?? index)} className="mb-2"><Details record={item}/></View>) : <Text className="text-xs text-brand-muted">No records yet.</Text>}</Card>)}
+              {["quotations", "amcContracts"].map(key => <Card key={key} className="mb-4"><Text className="mb-2 text-base font-bold text-brand-ink dark:text-slate-100">{key === "quotations" ? "Quotation history" : "AMC history"}</Text>{rows(key).length ? rows(key).map((item, index) => <View key={String(item._id ?? index)} className="mb-2"><Details record={item}/></View>) : <Text className="text-xs text-brand-muted dark:text-slate-400">No records yet.</Text>}</Card>)}
               {actionError ? <ErrorNotice message={actionError} /> : null}
               {editing ? <Card className="mb-4">
-                <Text className="mb-3 text-base font-bold text-brand-ink">Edit customer</Text>
+                <Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">Edit customer</Text>
                 {editFields.map((field) => <Field key={field.key} accessibilityLabel={field.label} label={field.label} value={values[field.key] ?? ""} editable={!busy} keyboardType={field.numeric ? "decimal-pad" : field.key.includes("Number") ? "phone-pad" : "default"} maxLength={field.maxLength} multiline={field.multiline} numberOfLines={field.multiline ? 3 : 1} onChangeText={(text) => setValues((current) => ({ ...current, [field.key]: text }))} />)}
                 <SelectField label="Status" value={values.status ?? ""} options={statuses.map((status) => ({ value: status, label: status }))} placeholder="Choose status" disabled={busy} onChange={(status) => setValues((current) => ({ ...current, status }))} />
                 <ActionButton label={busy ? "Saving…" : "Save customer"} disabled={busy} onPress={() => void save()} />
               </Card> : null}
-              <Card className="mb-4"><Text className="mb-1 text-base font-bold text-brand-ink">Customer information</Text><Details record={record} /></Card>
+              <Card className="mb-4"><Text className="mb-1 text-base font-bold text-brand-ink dark:text-slate-100">Customer information</Text><Details record={record} /></Card>
               {context ? <>
-                {isRecord(context.sourceLead) ? <Card className="mb-4"><Text className="mb-1 text-base font-bold text-brand-ink">Source lead</Text><Details record={Object.fromEntries(["leadCode", "status", "customerName", "mobileNumber", "siteAddress"].filter((key) => isRecord(context.sourceLead) && context.sourceLead[key] != null && context.sourceLead[key] !== "").map((key) => [key, key === "status" ? readable((context.sourceLead as RecordValue)[key]) : (context.sourceLead as RecordValue)[key]]))} /></Card> : null}
+                {isRecord(context.sourceLead) ? <Card className="mb-4"><Text className="mb-1 text-base font-bold text-brand-ink dark:text-slate-100">Source lead</Text><Details record={Object.fromEntries(["leadCode", "status", "customerName", "mobileNumber", "siteAddress"].filter((key) => isRecord(context.sourceLead) && context.sourceLead[key] != null && context.sourceLead[key] !== "").map((key) => [key, key === "status" ? readable((context.sourceLead as RecordValue)[key]) : (context.sourceLead as RecordValue)[key]]))} /></Card> : null}
                 <Card className="mb-4">
-                  <Text className="mb-3 text-base font-bold text-brand-ink">Documents</Text>
+                  <Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">Documents</Text>
                   <View className="mb-3 self-start"><ActionButton label="Customer documents" kind="secondary" disabled={busy || documentBusy || uploadBusy} onPress={() => void refreshDocuments()} /></View>
                   {documentError ? <ErrorNotice message={documentError} /> : null}
-                  {documentBusy ? <Text accessibilityRole="alert" className="mb-3 text-xs text-brand-muted">Processing document…</Text> : null}
+                  {documentBusy ? <Text accessibilityRole="alert" className="mb-3 text-xs text-brand-muted dark:text-slate-400">Processing document…</Text> : null}
                   {rows("documents").length ? rows("documents").map((document, index) => {
                     const documentId = String(document._id ?? document.id ?? index);
-                    return <View key={documentId} className="mb-3 rounded-xl border border-brand-line p-3">
-                      <Text className="text-sm font-bold text-brand-ink">{readable(document.documentType)}</Text>
-                      <Text className="mt-1 text-xs leading-5 text-brand-muted">{String(document.fileName ?? "File name unavailable")} · {readable(document.verificationStatus)}</Text>
-                      <Text className="mt-1 text-xs leading-5 text-brand-muted">Uploaded {display(document.uploadedAt)}{isRecord(document.uploadedBy) ? ` · By ${display(document.uploadedBy)}` : ""}</Text>
-                      {document.verifiedAt ? <Text className="mt-1 text-xs leading-5 text-brand-muted">Verified {display(document.verifiedAt)}{isRecord(document.verifiedBy) ? ` · By ${display(document.verifiedBy)}` : ""}</Text> : null}
-                      {typeof document.verificationRemark === "string" && document.verificationRemark ? <Text className="mt-1 text-xs text-brand-ink">Note: {document.verificationRemark}</Text> : null}
+                    return <View key={documentId} className="mb-3 rounded-xl border border-brand-line dark:border-slate-700 p-3">
+                      <Text className="text-sm font-bold text-brand-ink dark:text-slate-100">{readable(document.documentType)}</Text>
+                      <Text className="mt-1 text-xs leading-5 text-brand-muted dark:text-slate-400">{String(document.fileName ?? "File name unavailable")} · {readable(document.verificationStatus)}</Text>
+                      <Text className="mt-1 text-xs leading-5 text-brand-muted dark:text-slate-400">Uploaded {display(document.uploadedAt)}{isRecord(document.uploadedBy) ? ` · By ${display(document.uploadedBy)}` : ""}</Text>
+                      {document.verifiedAt ? <Text className="mt-1 text-xs leading-5 text-brand-muted dark:text-slate-400">Verified {display(document.verifiedAt)}{isRecord(document.verifiedBy) ? ` · By ${display(document.verifiedBy)}` : ""}</Text> : null}
+                      {typeof document.verificationRemark === "string" && document.verificationRemark ? <Text className="mt-1 text-xs text-brand-ink dark:text-slate-100">Note: {document.verificationRemark}</Text> : null}
                       <View className="mt-3 flex-row flex-wrap gap-2">
                         <ActionButton label={preview?.documentId === documentId ? "Hide preview" : "Preview"} icon={Eye} kind="secondary" disabled={busy || documentBusy || uploadBusy} onPress={() => void documentAction(document, "preview")} />
                         <ActionButton label="Download" icon={Download} kind="secondary" disabled={busy || documentBusy || uploadBusy} onPress={() => void documentAction(document, "download")} />
@@ -322,39 +322,39 @@ export default function CustomerDetailsModal({ customerId, onClose, onSaved }: {
                       </View> : null}
                       {download?.documentId === documentId ? <View className="mt-3"><ActionButton label="Open download" icon={ExternalLink} onPress={() => void openUrl(download.url)} /></View> : null}
                     </View>;
-                  }) : <Text className="text-sm text-brand-muted">No customer documents have been uploaded.</Text>}
+                  }) : <Text className="text-sm text-brand-muted dark:text-slate-400">No customer documents have been uploaded.</Text>}
                 </Card>
                 <Card className="mb-4">
-                  <Text className="mb-3 text-base font-bold text-brand-ink">Upload customer document</Text>
+                  <Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">Upload customer document</Text>
                   <SelectField label="Document type" value={documentType} options={documentTypes.map((value) => ({ value, label: readable(value) }))} placeholder="Choose document type" disabled={busy || documentBusy || uploadBusy} onChange={setDocumentType} />
-                  <Text className="mb-2 text-xs text-brand-muted">File (PDF or image, max 20 MB)</Text>
+                  <Text className="mb-2 text-xs text-brand-muted dark:text-slate-400">File (PDF or image, max 20 MB)</Text>
                   <ActionButton label={file ? "Change file" : "Choose file"} kind="secondary" disabled={busy || documentBusy || uploadBusy} onPress={() => void pickFile()} />
-                  {file ? <Text className="mt-2 text-xs text-brand-ink">{file.name}</Text> : null}
+                  {file ? <Text className="mt-2 text-xs text-brand-ink dark:text-slate-100">{file.name}</Text> : null}
                   {uploadError ? <View className="mt-3"><ErrorNotice message={uploadError} /></View> : null}
                   <View className="mt-3"><ActionButton label={uploadBusy ? "Uploading…" : "Upload document"} disabled={busy || documentBusy || uploadBusy} onPress={() => void uploadDocument()} /></View>
                 </Card>
-                <Card className="mb-4"><Text className="mb-2 text-base font-bold text-brand-ink">Lead status history</Text>
-                  {rows("leadStatusHistory").length ? rows("leadStatusHistory").map((entry, index) => <View key={String(entry._id ?? index)} className="border-b border-brand-line py-3">
-                    <Text className="text-sm font-bold text-brand-ink">{readable(entry.previousStatus)} → {readable(entry.newStatus)}</Text>
-                    <Text className="mt-1 text-xs leading-5 text-brand-muted">{display(entry.changedAt)}{isRecord(entry.changedBy) ? ` · Updated by ${display(entry.changedBy)}` : ""}</Text>
-                    {typeof entry.remark === "string" ? <Text className="mt-1 text-sm text-brand-ink">Note: {entry.remark}</Text> : null}
-                    {entry.nextFollowUpDate ? <Text className="mt-1 text-xs text-brand-muted">Next follow-up: {display(entry.nextFollowUpDate)}</Text> : null}
-                  </View>) : <Text className="text-sm text-brand-muted">No lead status history is available.</Text>}
+                <Card className="mb-4"><Text className="mb-2 text-base font-bold text-brand-ink dark:text-slate-100">Lead status history</Text>
+                  {rows("leadStatusHistory").length ? rows("leadStatusHistory").map((entry, index) => <View key={String(entry._id ?? index)} className="border-b border-brand-line dark:border-slate-700 py-3">
+                    <Text className="text-sm font-bold text-brand-ink dark:text-slate-100">{readable(entry.previousStatus)} → {readable(entry.newStatus)}</Text>
+                    <Text className="mt-1 text-xs leading-5 text-brand-muted dark:text-slate-400">{display(entry.changedAt)}{isRecord(entry.changedBy) ? ` · Updated by ${display(entry.changedBy)}` : ""}</Text>
+                    {typeof entry.remark === "string" ? <Text className="mt-1 text-sm text-brand-ink dark:text-slate-100">Note: {entry.remark}</Text> : null}
+                    {entry.nextFollowUpDate ? <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">Next follow-up: {display(entry.nextFollowUpDate)}</Text> : null}
+                  </View>) : <Text className="text-sm text-brand-muted dark:text-slate-400">No lead status history is available.</Text>}
                 </Card>
-                <Card className="mb-4"><Text className="mb-2 text-base font-bold text-brand-ink">Site visits</Text>
-                  {rows("visits").length ? rows("visits").map((visit, index) => <View key={String(visit._id ?? index)} className="border-b border-brand-line py-3">
-                    <Text className="text-sm font-bold text-brand-ink">Visit · {display(visit.visitDate)}</Text>
-                    {typeof visit.remark === "string" ? <Text className="mt-1 text-sm text-brand-ink">Note: {visit.remark}</Text> : null}
-                    {visit.nextVisitDate ? <Text className="mt-1 text-xs text-brand-muted">Next visit: {display(visit.nextVisitDate)}</Text> : null}
-                    {isRecord(visit.visitedBy) ? <Text className="mt-1 text-xs text-brand-muted">Visited by {display(visit.visitedBy)}</Text> : null}
-                  </View>) : <Text className="text-sm text-brand-muted">No site visits are recorded.</Text>}
+                <Card className="mb-4"><Text className="mb-2 text-base font-bold text-brand-ink dark:text-slate-100">Site visits</Text>
+                  {rows("visits").length ? rows("visits").map((visit, index) => <View key={String(visit._id ?? index)} className="border-b border-brand-line dark:border-slate-700 py-3">
+                    <Text className="text-sm font-bold text-brand-ink dark:text-slate-100">Visit · {display(visit.visitDate)}</Text>
+                    {typeof visit.remark === "string" ? <Text className="mt-1 text-sm text-brand-ink dark:text-slate-100">Note: {visit.remark}</Text> : null}
+                    {visit.nextVisitDate ? <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">Next visit: {display(visit.nextVisitDate)}</Text> : null}
+                    {isRecord(visit.visitedBy) ? <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">Visited by {display(visit.visitedBy)}</Text> : null}
+                  </View>) : <Text className="text-sm text-brand-muted dark:text-slate-400">No site visits are recorded.</Text>}
                 </Card>
-                <Card className="mb-4"><Text className="mb-2 text-base font-bold text-brand-ink">Customer activity</Text>
-                  {rows("activities").length ? rows("activities").map((activity, index) => <View key={String(activity._id ?? index)} className="border-b border-brand-line py-3">
-                    <Text className="text-sm font-bold text-brand-ink">{readable(activity.action)}</Text>
-                    <Text className="mt-1 text-xs text-brand-muted">{display(activity.occurredAt)}{isRecord(activity.actor) ? ` · By ${display(activity.actor)}` : ""}</Text>
-                    {typeof activity.description === "string" ? <Text className="mt-1 text-sm leading-5 text-brand-ink">{activity.description}</Text> : null}
-                  </View>) : <Text className="text-sm text-brand-muted">No customer activity is recorded.</Text>}
+                <Card className="mb-4"><Text className="mb-2 text-base font-bold text-brand-ink dark:text-slate-100">Customer activity</Text>
+                  {rows("activities").length ? rows("activities").map((activity, index) => <View key={String(activity._id ?? index)} className="border-b border-brand-line dark:border-slate-700 py-3">
+                    <Text className="text-sm font-bold text-brand-ink dark:text-slate-100">{readable(activity.action)}</Text>
+                    <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">{display(activity.occurredAt)}{isRecord(activity.actor) ? ` · By ${display(activity.actor)}` : ""}</Text>
+                    {typeof activity.description === "string" ? <Text className="mt-1 text-sm leading-5 text-brand-ink dark:text-slate-100">{activity.description}</Text> : null}
+                  </View>) : <Text className="text-sm text-brand-muted dark:text-slate-400">No customer activity is recorded.</Text>}
                 </Card>
               </> : null}
             </> : null}

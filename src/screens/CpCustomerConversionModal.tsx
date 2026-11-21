@@ -53,14 +53,14 @@ export default function CpCustomerConversionModal({ cpId, onClose, onSaved }: { 
     catch (e) { setError(e instanceof Error ? e.message : 'Complete all required fields'); return; }
     Alert.alert('Convert CP to customer?', 'Create a linked customer record? The CP account and reporting manager will be preserved.', [{ text: 'Cancel', style: 'cancel' }, { text: 'OK, convert', onPress: () => void convert() }]);
   }
-  return <Modal transparent animationType="slide" visible onRequestClose={() => { if (!busy) onClose(); }}><View className="flex-1 justify-end bg-black/40"><View className="max-h-[92%] rounded-t-3xl bg-brand-canvas p-5 pb-8">
-    <View className="mb-3 flex-row items-center justify-between"><Text className="text-xl font-bold text-brand-ink">Convert CP to customer</Text><Pressable disabled={busy} onPress={onClose} accessibilityLabel="Close conversion" className="p-3"><X size={19}/></Pressable></View>
-    <ScrollView keyboardShouldPersistTaps="handled"><Text className="mb-4 text-xs leading-5 text-brand-muted">The channel partner will also become a customer. Complete the customer details and upload all four required documents.</Text>
+  return <Modal transparent animationType="slide" visible onRequestClose={() => { if (!busy) onClose(); }}><View className="flex-1 justify-end bg-black/40"><View className="max-h-[92%] rounded-t-3xl bg-brand-canvas dark:bg-slate-950 p-5 pb-8">
+    <View className="mb-3 flex-row items-center justify-between"><Text className="text-xl font-bold text-brand-ink dark:text-slate-100">Convert CP to customer</Text><Pressable disabled={busy} onPress={onClose} accessibilityLabel="Close conversion" className="p-3"><X size={19}/></Pressable></View>
+    <ScrollView keyboardShouldPersistTaps="handled"><Text className="mb-4 text-xs leading-5 text-brand-muted dark:text-slate-400">The channel partner will also become a customer. Complete the customer details and upload all four required documents.</Text>
       {loading ? <LoadingState/> : draft ? <>
         {cpCustomerFields.map(([key, label, type, max]) => <Field key={key} label={label} value={draft[key] ?? ''} maxLength={max} editable={!busy} keyboardType={type === 'number' ? 'decimal-pad' : type === 'tel' ? 'phone-pad' : 'default'} onChangeText={value => update(key, value)}/>)}
         {([['state', 'State', states], ['district', 'District', districts], ['branch', 'Branch', branches]] as const).map(([key, label, places]) => <SelectField key={key} label={label} value={draft[key] ?? ''} options={places.map(place => ({ value: place._id, label: place.name }))} placeholder={`Select ${label.toLowerCase()}`} disabled={busy} onChange={value => update(key, value)}/>)}
-        {cpCustomerDocuments.map(type => <View key={type} className="mb-3"><ActionButton label={`Select ${type.replaceAll('_', ' ')}`} disabled={busy} kind="secondary" onPress={() => void pick(type)}/><Text className="mt-1 text-xs text-brand-muted">{files[type]?.name ?? 'Required document'}</Text></View>)}
-        <Text className="mb-3 text-xs text-brand-muted">PDF, JPEG, PNG or WebP. Maximum 20 MB per document.</Text>
+        {cpCustomerDocuments.map(type => <View key={type} className="mb-3"><ActionButton label={`Select ${type.replaceAll('_', ' ')}`} disabled={busy} kind="secondary" onPress={() => void pick(type)}/><Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">{files[type]?.name ?? 'Required document'}</Text></View>)}
+        <Text className="mb-3 text-xs text-brand-muted dark:text-slate-400">PDF, JPEG, PNG or WebP. Maximum 20 MB per document.</Text>
       </> : null}
       {error ? <ErrorNotice message={error} onRetry={() => setReload(v => v + 1)}/> : null}
       <View className="mt-3 flex-row flex-wrap gap-2"><ActionButton label="Cancel" kind="secondary" disabled={busy} onPress={onClose}/><ActionButton label={busy ? 'Uploading and converting...' : 'Convert to customer'} disabled={busy || loading || !draft} onPress={confirm}/></View>

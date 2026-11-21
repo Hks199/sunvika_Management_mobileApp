@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { RefreshControl } from "react-native";
 import { ChevronLeft, RefreshCw, type LucideIcon } from "lucide-react-native";
+import { useTheme } from "./theme";
 
 export function Page({
   children,
@@ -24,7 +25,7 @@ export function Page({
 }) {
   return (
     <ScrollView
-      className={`flex-1 bg-brand-canvas ${className}`}
+      className={`flex-1 bg-brand-canvas dark:bg-slate-950 ${className}`}
       contentContainerClassName={`px-5 pb-8 pt-5 ${contentClassName}`}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
@@ -48,17 +49,18 @@ export function Heading({
   description?: string;
   onBack?: () => void;
 }) {
+  const { theme } = useTheme();
   return (
     <View className="mb-5">
       {onBack ? (
         <Pressable onPress={onBack} className="mb-3 flex-row items-center self-start">
-          <ChevronLeft size={17} color="#080875" />
-          <Text className="font-semibold text-brand-navy">Back</Text>
+          <ChevronLeft size={17} color={theme === "dark" ? "#c7d2fe" : "#080875"} />
+          <Text className="font-semibold text-brand-navy dark:text-indigo-200">Back</Text>
         </Pressable>
       ) : null}
-      <Text className="mb-1 text-[10px] font-bold tracking-[1.7px] text-brand-navy">{eyebrow}</Text>
-      <Text className="text-[27px] font-bold leading-8 text-brand-ink">{title}</Text>
-      {description ? <Text className="mt-1 text-[13px] leading-5 text-brand-muted">{description}</Text> : null}
+      <Text className="mb-1 text-[10px] font-bold tracking-[1.7px] text-brand-navy dark:text-indigo-200">{eyebrow}</Text>
+      <Text className="text-[27px] font-bold leading-8 text-brand-ink dark:text-slate-100">{title}</Text>
+      {description ? <Text className="mt-1 text-[13px] leading-5 text-brand-muted dark:text-slate-400">{description}</Text> : null}
     </View>
   );
 }
@@ -76,12 +78,13 @@ export function ActionButton({
   kind?: "primary" | "secondary" | "danger";
   disabled?: boolean;
 }) {
+  const { theme } = useTheme();
   const style = kind === "primary"
     ? "bg-brand-navy"
     : kind === "danger"
       ? "border border-red-200 bg-red-50"
-      : "border border-brand-line bg-white";
-  const textStyle = kind === "primary" ? "text-white" : kind === "danger" ? "text-red-700" : "text-brand-ink";
+      : "border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800";
+  const textStyle = kind === "primary" ? "text-white" : kind === "danger" ? "text-red-700" : "text-brand-ink dark:text-slate-100";
   return (
     <Pressable
       accessibilityRole="button"
@@ -89,7 +92,7 @@ export function ActionButton({
       onPress={onPress}
       className={`min-h-11 flex-row items-center justify-center gap-2 rounded-xl px-4 ${style} ${disabled ? "opacity-50" : ""}`}
     >
-      {Icon ? <Icon size={16} color={kind === "primary" ? "#ffffff" : kind === "danger" ? "#b91c1c" : "#171b4b"} /> : null}
+      {Icon ? <Icon size={16} color={kind === "primary" ? "#ffffff" : kind === "danger" ? "#b91c1c" : theme === "dark" ? "#e2e8f0" : "#171b4b"} /> : null}
       <Text className={`text-sm font-bold ${textStyle}`}>{label}</Text>
     </Pressable>
   );
@@ -103,12 +106,12 @@ export function Field({
 }: TextInputProps & { label: string; leftIcon?: ReactNode; rightAccessory?: ReactNode }) {
   return (
     <View className="mb-4">
-      <Text className="mb-1.5 text-xs font-semibold text-brand-ink">{label}</Text>
-      <View className="min-h-12 flex-row items-center rounded-xl border border-brand-line bg-white px-3.5">
+      <Text className="mb-1.5 text-xs font-semibold text-brand-ink dark:text-slate-100">{label}</Text>
+      <View className="min-h-12 flex-row items-center rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5">
         {leftIcon ? <View className="mr-2">{leftIcon}</View> : null}
         <TextInput
           {...props}
-          className={`flex-1 py-3 text-sm text-brand-ink ${props.className ?? ""}`}
+          className={`flex-1 py-3 text-sm text-brand-ink dark:text-slate-100 ${props.className ?? ""}`}
           placeholderTextColor="#9aa1b5"
         />
         {rightAccessory ? <View className="ml-2">{rightAccessory}</View> : null}
@@ -118,7 +121,7 @@ export function Field({
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <View className={`rounded-2xl border border-brand-line bg-white p-4 ${className}`}>{children}</View>;
+  return <View className={`rounded-2xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 p-4 ${className}`}>{children}</View>;
 }
 
 export function ErrorNotice({ message, onRetry }: { message: string; onRetry?: () => void }) {
@@ -138,16 +141,16 @@ export function LoadingState({ label = "Loadingâ€¦" }: { label?: string }) {
   return (
     <View className="items-center justify-center py-12">
       <ActivityIndicator color="#080875" />
-      <Text className="mt-3 text-sm text-brand-muted">{label}</Text>
+      <Text className="mt-3 text-sm text-brand-muted dark:text-slate-400">{label}</Text>
     </View>
   );
 }
 
 export function EmptyState({ label }: { label: string }) {
   return (
-    <View className="items-center rounded-xl bg-brand-canvas px-4 py-8">
-      <Text className="text-sm font-semibold text-brand-ink">{label}</Text>
-      <Text className="mt-1 text-center text-xs text-brand-muted">Records will appear here when available to your account.</Text>
+    <View className="items-center rounded-xl bg-brand-canvas dark:bg-slate-950 px-4 py-8">
+      <Text className="text-sm font-semibold text-brand-ink dark:text-slate-100">{label}</Text>
+      <Text className="mt-1 text-center text-xs text-brand-muted dark:text-slate-400">Records will appear here when available to your account.</Text>
     </View>
   );
 }
@@ -155,21 +158,22 @@ export function EmptyState({ label }: { label: string }) {
 export function SectionTitle({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <View className="mb-3 flex-row items-center justify-between">
-      <Text className="text-base font-bold text-brand-ink">{title}</Text>
+      <Text className="text-base font-bold text-brand-ink dark:text-slate-100">{title}</Text>
       {action}
     </View>
   );
 }
 
 export function RefreshAction({ onPress, loading = false }: { onPress: () => void; loading?: boolean }) {
+  const { theme } = useTheme();
   return (
     <Pressable
       accessibilityLabel="Refresh"
       disabled={loading}
       onPress={onPress}
-      className="h-10 w-10 items-center justify-center rounded-xl border border-brand-line bg-white"
+      className="h-10 w-10 items-center justify-center rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800"
     >
-      <RefreshCw size={17} color="#080875" />
+      <RefreshCw size={17} color={theme === "dark" ? "#c7d2fe" : "#080875"} />
     </Pressable>
   );
 }

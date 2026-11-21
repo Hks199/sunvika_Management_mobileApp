@@ -42,6 +42,7 @@ import LoginScreen from "./src/screens/LoginScreen";
 import RecordsScreen from "./src/screens/RecordsScreen";
 import type { ModuleKey, ScreenKey } from "./src/types";
 import { Card, Page } from "./src/ui";
+import { AppearanceSetting, ThemeProvider, useTheme } from "./src/theme";
 
 type AppScreen = ScreenKey | "more";
 
@@ -108,24 +109,25 @@ function MoreScreen({ onNavigate }: { onNavigate: (screen: ScreenKey) => void })
   const role = typeof user?.role === "string" ? user.role : user?.role?.code;
   return (
     <Page contentClassName="pt-5">
-      <Text className="mb-1 text-[10px] font-bold tracking-[1.7px] text-brand-navy">YOUR WORKSPACE</Text>
-      <Text className="mb-1 text-[27px] font-bold text-brand-ink">More</Text>
-      <Text className="mb-5 text-xs leading-5 text-brand-muted">Organization tools, reports, and account security.</Text>
+      <Text className="mb-1 text-[10px] font-bold tracking-[1.7px] text-brand-navy dark:text-indigo-200">YOUR WORKSPACE</Text>
+      <Text className="mb-1 text-[27px] font-bold text-brand-ink dark:text-slate-100">More</Text>
+      <Text className="mb-5 text-xs leading-5 text-brand-muted dark:text-slate-400">Organization tools, reports, and account security.</Text>
+      <AppearanceSetting />
       {sections.map((section) => (
           <View key={section.title} className="mb-5">
-            <Text className="mb-2 ml-1 text-[10px] font-bold tracking-[1.4px] text-brand-muted">{section.title}</Text>
+            <Text className="mb-2 ml-1 text-[10px] font-bold tracking-[1.4px] text-brand-muted dark:text-slate-400">{section.title}</Text>
             <Card className="p-1">
               {section.items.filter(item => (item.key === "calling-reports" || item.key === "cp-notifications") ? ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "") : item.key === "announcements" ? ANNOUNCEMENT_PUBLISHERS.includes(role ?? "") : item.key === "roles" ? role === "MD" : item.key === "queries" ? QUERY_ROLES.includes(role ?? "") : item.key !== "calling-lists" || ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "")).map(({ key, icon: Icon }, index) => (
                 <Pressable
                   key={key}
                   onPress={() => onNavigate(key)}
-                  className={`flex-row items-center px-3 py-3.5 ${index ? "border-t border-brand-line" : ""}`}
+                  className={`flex-row items-center px-3 py-3.5 ${index ? "border-t border-brand-line dark:border-slate-700" : ""}`}
                 >
                   <View className="mr-3 h-9 w-9 items-center justify-center rounded-xl bg-indigo-50">
                     <Icon size={17} color="#17247a" />
                   </View>
-                  <Text className="flex-1 text-sm font-semibold text-brand-ink">{moduleLabels[key]}</Text>
-                  <Text className="text-lg text-brand-muted">›</Text>
+                  <Text className="flex-1 text-sm font-semibold text-brand-ink dark:text-slate-100">{moduleLabels[key]}</Text>
+                  <Text className="text-lg text-brand-muted dark:text-slate-400">›</Text>
                 </Pressable>
               ))}
             </Card>
@@ -137,6 +139,7 @@ function MoreScreen({ onNavigate }: { onNavigate: (screen: ScreenKey) => void })
 
 function Workspace() {
   const { user, loading, signOut } = useAuth();
+  const { theme } = useTheme();
   const [queryLink, setQueryLink] = useState({ id: "", version: 0 });
   const [screen, setScreen] = useState<AppScreen>("overview");
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
@@ -181,9 +184,9 @@ function Workspace() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-brand-canvas">
+      <View className="flex-1 items-center justify-center bg-brand-canvas dark:bg-slate-950">
         <ActivityIndicator size="large" color="#17247a" />
-        <Text className="mt-3 text-sm text-brand-muted">Loading your workspace…</Text>
+        <Text className="mt-3 text-sm text-brand-muted dark:text-slate-400">Loading your workspace…</Text>
       </View>
     );
   }
@@ -209,19 +212,19 @@ function Workspace() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-brand-canvas" edges={["top", "left", "right", "bottom"]}>
-      <StatusBar style="dark" />
-      <View className="z-10 flex-row items-center border-b border-brand-line bg-white px-4 py-3">
+    <SafeAreaView className="flex-1 bg-brand-canvas dark:bg-slate-950" edges={["top", "left", "right", "bottom"]}>
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
+      <View className="z-10 flex-row items-center border-b border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3">
         <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl bg-brand-navy">
           <Text className="text-base font-bold text-white">S</Text>
         </View>
         <View className="flex-1">
-          <Text className="text-[10px] font-semibold text-brand-muted">SUNVIKA MANAGEMENT</Text>
-          <Text numberOfLines={1} className="text-sm font-bold text-brand-ink">{title}</Text>
+          <Text className="text-[10px] font-semibold text-brand-muted dark:text-slate-400">SUNVIKA MANAGEMENT</Text>
+          <Text numberOfLines={1} className="text-sm font-bold text-brand-ink dark:text-slate-100">{title}</Text>
         </View>
-        <View className="mr-3 flex-row items-center rounded-full bg-brand-canvas px-2.5 py-1.5">
+        <View className="mr-3 flex-row items-center rounded-full bg-brand-canvas dark:bg-slate-950 px-2.5 py-1.5">
           <View className={`mr-1.5 h-1.5 w-1.5 rounded-full ${apiOnline ? "bg-emerald-600" : apiOnline === false ? "bg-red-500" : "bg-amber-500"}`} />
-          <Text className="text-[9px] font-semibold text-brand-ink">
+          <Text className="text-[9px] font-semibold text-brand-ink dark:text-slate-100">
             {apiOnline === null ? "Checking" : apiOnline ? "API connected" : "API offline"}
           </Text>
         </View>
@@ -277,7 +280,7 @@ function Workspace() {
           />
         )}
       </View>
-      <View className="flex-row border-t border-brand-line bg-white px-2 pb-1 pt-2">
+      <View className="flex-row border-t border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 px-2 pb-1 pt-2">
         <TabButton label="Overview" icon={Home} active={screen === "overview"} onPress={() => setScreen("overview")} />
         <TabButton label="Leads" icon={ContactRound} active={screen === "leads"} onPress={() => setScreen("leads")} />
         <TabButton label="Visits" icon={CalendarClock} active={screen === "visits"} onPress={() => setScreen("visits")} />
@@ -299,10 +302,11 @@ function TabButton({
   active: boolean;
   onPress: () => void;
 }) {
+  const { theme } = useTheme();
   return (
     <Pressable onPress={onPress} className="flex-1 items-center py-1.5">
-      <Icon size={19} color={active ? "#17247a" : "#8991a8"} />
-      <Text className={`mt-1 text-[9px] font-semibold ${active ? "text-brand-navy" : "text-brand-muted"}`}>{label}</Text>
+      <Icon size={19} color={active ? (theme === "dark" ? "#c7d2fe" : "#17247a") : "#8991a8"} />
+      <Text className={`mt-1 text-[9px] font-semibold ${active ? "text-brand-navy dark:text-indigo-200" : "text-brand-muted dark:text-slate-400"}`}>{label}</Text>
     </Pressable>
   );
 }
@@ -310,9 +314,11 @@ function TabButton({
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <Workspace />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Workspace />
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

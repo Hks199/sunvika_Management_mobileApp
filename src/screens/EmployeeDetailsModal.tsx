@@ -37,7 +37,7 @@ function display(value: unknown): string {
 }
 function recordId(value: unknown): string { return typeof value === "string" ? value : isRecord(value) ? String(value._id ?? value.id ?? "") : ""; }
 function Details({ record, channelPartner = false }: { record: RecordValue; channelPartner?: boolean }) {
-  return <>{Object.entries(record).filter(([key]) => !hiddenField.test(key)).map(([key, value]) => <View key={key} className="border-b border-brand-line py-3"><Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted">{channelPartner && key === "employeeCode" ? "CP code" : label(key)}</Text><Text className="mt-1 text-sm leading-5 text-brand-ink">{display(value)}</Text></View>)}</>;
+  return <>{Object.entries(record).filter(([key]) => !hiddenField.test(key)).map(([key, value]) => <View key={key} className="border-b border-brand-line dark:border-slate-700 py-3"><Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted dark:text-slate-400">{channelPartner && key === "employeeCode" ? "CP code" : label(key)}</Text><Text className="mt-1 text-sm leading-5 text-brand-ink dark:text-slate-100">{display(value)}</Text></View>)}</>;
 }
 const editFields = [{ key: "firstName", label: "First name", max: 80 }, { key: "middleName", label: "Middle name", max: 80 }, { key: "lastName", label: "Last name", max: 80 }, { key: "mobileNumber", label: "Mobile number", max: 16 }, { key: "branch", label: "Branch (optional)", max: 24 }];
 
@@ -188,8 +188,8 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
   }
 
   return <><Modal transparent animationType="slide" visible onRequestClose={() => { if (!busy) onClose(); }}>
-    <View className="flex-1 justify-end bg-black/40"><View className="max-h-[92%] rounded-t-3xl bg-brand-canvas px-5 pb-8 pt-5">
-      <View className="mb-4 flex-row items-center justify-between gap-3"><View className="flex-1"><Text className="text-[10px] font-bold tracking-wide text-brand-navy">{entity.toUpperCase()} DETAILS</Text><Text numberOfLines={2} className="mt-1 text-xl font-bold text-brand-ink">{record ? [record.firstName, record.middleName, record.lastName].filter(Boolean).join(" ") || display(record.employeeCode) : `Loading ${entity.toLowerCase()}…`}</Text></View><Pressable accessibilityRole="button" accessibilityLabel={`Close ${entity.toLowerCase()} details`} disabled={busy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white"><X size={19} color="#17204f" /></Pressable></View>
+    <View className="flex-1 justify-end bg-black/40"><View className="max-h-[92%] rounded-t-3xl bg-brand-canvas dark:bg-slate-950 px-5 pb-8 pt-5">
+      <View className="mb-4 flex-row items-center justify-between gap-3"><View className="flex-1"><Text className="text-[10px] font-bold tracking-wide text-brand-navy dark:text-indigo-200">{entity.toUpperCase()} DETAILS</Text><Text numberOfLines={2} className="mt-1 text-xl font-bold text-brand-ink dark:text-slate-100">{record ? [record.firstName, record.middleName, record.lastName].filter(Boolean).join(" ") || display(record.employeeCode) : `Loading ${entity.toLowerCase()}…`}</Text></View><Pressable accessibilityRole="button" accessibilityLabel={`Close ${entity.toLowerCase()} details`} disabled={busy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800"><X size={19} color="#17204f" /></Pressable></View>
       <ScrollView className="max-h-[84%]" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {loading ? <LoadingState label={`Loading ${entity.toLowerCase()} details…`} /> : null}
         {error ? <ErrorNotice message={error} onRetry={() => void reload()} /> : null}
@@ -206,13 +206,13 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
           </View>
           <EmployeeProfileImageEditor key={employeeId} employeeId={employeeId} onSaved={async()=>{await load();onSaved();}}/>
           {actionError ? <ErrorNotice message={actionError} /> : null}
-          {action ? <Card className="mb-4"><Text className="mb-3 text-base font-bold text-brand-ink">{action === "edit" ? `Edit ${entity.toLowerCase()}` : "Change reporting manager"}</Text>
+          {action ? <Card className="mb-4"><Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">{action === "edit" ? `Edit ${entity.toLowerCase()}` : "Change reporting manager"}</Text>
             {action === "edit" ? editFields.map((field) => field.key === "branch" ? <SelectField key={field.key} label={field.label} value={values.branch ?? ""} options={branches} placeholder="No branch" disabled={busy} loading={branchesLoading} onChange={(value) => setValues(current => ({ ...current, branch: value }))} /> : <Field key={field.key} label={field.label} accessibilityLabel={field.label} maxLength={field.max} editable={!busy} keyboardType={field.key === "mobileNumber" ? "phone-pad" : "default"} autoCapitalize={field.key === "branch" ? "none" : "words"} value={values[field.key] ?? ""} onChangeText={(value) => setValues((current) => ({ ...current, [field.key]: value }))} />) : <Field label="Reporting manager ID" accessibilityLabel="Reporting manager ID" autoCapitalize="none" maxLength={24} editable={!busy} value={managerId} onChangeText={setManagerId} />}
-            {action === "edit" ? <Text className="mb-3 text-xs text-brand-muted">{districtId ? "Branches in the current address district. Choose No branch to remove the assignment." : "No address district is available. You can keep or remove the current branch."}</Text> : null}
+            {action === "edit" ? <Text className="mb-3 text-xs text-brand-muted dark:text-slate-400">{districtId ? "Branches in the current address district. Choose No branch to remove the assignment." : "No address district is available. You can keep or remove the current branch."}</Text> : null}
             {action === "edit" && branchError ? <ErrorNotice message={branchError} onRetry={() => setBranchReload(value => value + 1)} /> : null}
             <ActionButton label={busy ? "Saving…" : action === "edit" ? `Save ${entity.toLowerCase()}` : "Save reporting manager"} disabled={busy || (action === "edit" && branchesLoading)} onPress={() => void save()} />
           </Card> : null}
-          {hasImage || imageUrl || imageError || imageLoading ? <Card className="mb-4"><Text className="mb-3 text-base font-bold text-brand-ink">Profile image</Text>
+          {hasImage || imageUrl || imageError || imageLoading ? <Card className="mb-4"><Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">Profile image</Text>
             {imageLoading ? <LoadingState label="Loading profile image…" /> : null}
             {imageError ? <ErrorNotice message={imageError} onRetry={() => void loadImage()} /> : null}
             {imageUrl ? <Image accessibilityLabel={`${entity} profile image`} source={{ uri: imageUrl }} resizeMode="contain" style={{ width: "100%", height: 220, borderRadius: 12 }} onError={() => { setImageUrl(""); setImageError("The image could not be loaded. Request a fresh profile image link."); }} /> : null}
@@ -220,17 +220,17 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
           </Card> : null}
           {isChannelPartner && !recordId(record.sourceCustomer) && record.isActive !== false && ["MD", "CP_HEAD", "RM"].includes(roleCode ?? "") ? <View className="mb-4 self-start"><ActionButton label="Convert to customer" disabled={busy} onPress={() => setConvertCustomer(true)}/></View> : null}
           {recordId(record.sourceCustomer) ? <View className="mb-4 self-start"><ActionButton label="Customer history" kind="secondary" onPress={() => setCustomerHistory(true)}/></View> : null}
-          <Card className="mb-4"><Text className="mb-1 text-base font-bold text-brand-ink">{entity} information</Text><Details record={record} channelPartner={isChannelPartner} /></Card>
-          {hierarchyLoading || hierarchyError || hierarchy !== null ? <Card className="mb-4"><Text className="mb-3 text-base font-bold text-brand-ink">Reporting hierarchy</Text>
+          <Card className="mb-4"><Text className="mb-1 text-base font-bold text-brand-ink dark:text-slate-100">{entity} information</Text><Details record={record} channelPartner={isChannelPartner} /></Card>
+          {hierarchyLoading || hierarchyError || hierarchy !== null ? <Card className="mb-4"><Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">Reporting hierarchy</Text>
             {hierarchyError ? <ErrorNotice message={hierarchyError} onRetry={() => void loadHierarchy()} /> : null}
-            {hierarchyLoading ? <LoadingState label="Loading reporting hierarchy…" /> : hierarchy?.length ? hierarchy.map((employee, index) => <View key={String(employee._id ?? index)} className="mb-3 rounded-xl border border-brand-line p-3"><Text className="text-sm font-bold text-brand-ink">{index + 1}. {display(employee)}</Text><Details record={employee} /></View>) : !hierarchyError ? <Text className="text-sm text-brand-muted">No reporting hierarchy is available.</Text> : null}
+            {hierarchyLoading ? <LoadingState label="Loading reporting hierarchy…" /> : hierarchy?.length ? hierarchy.map((employee, index) => <View key={String(employee._id ?? index)} className="mb-3 rounded-xl border border-brand-line dark:border-slate-700 p-3"><Text className="text-sm font-bold text-brand-ink dark:text-slate-100">{index + 1}. {display(employee)}</Text><Details record={employee} /></View>) : !hierarchyError ? <Text className="text-sm text-brand-muted dark:text-slate-400">No reporting hierarchy is available.</Text> : null}
           </Card> : null}
         </> : null}
       </ScrollView>
     </View></View>
   <Modal transparent animationType="fade" visible={imagePreviewOpen} onRequestClose={() => setImagePreviewOpen(false)}>
-    <View className="flex-1 justify-center bg-black/60 p-5"><View className="rounded-2xl bg-white p-5">
-      <View className="mb-4 flex-row items-center justify-between"><Text className="text-lg font-bold text-brand-ink">Profile image</Text><Pressable accessibilityRole="button" accessibilityLabel="Close profile image" onPress={() => setImagePreviewOpen(false)} className="p-2"><X size={22}/></Pressable></View>
+    <View className="flex-1 justify-center bg-black/60 p-5"><View className="rounded-2xl bg-white dark:bg-slate-800 p-5">
+      <View className="mb-4 flex-row items-center justify-between"><Text className="text-lg font-bold text-brand-ink dark:text-slate-100">Profile image</Text><Pressable accessibilityRole="button" accessibilityLabel="Close profile image" onPress={() => setImagePreviewOpen(false)} className="p-2"><X size={22}/></Pressable></View>
       {imageLoading ? <LoadingState label="Loading profile image..."/> : null}
       {imageError ? <ErrorNotice message={imageError} onRetry={() => void loadImage()}/> : null}
       {imageUrl ? <Image accessibilityLabel={`${entity} profile image`} source={{uri:imageUrl}} resizeMode="contain" style={{width:"100%",height:300}} onError={() => {setImageUrl("");setImageError("The saved photo could not be loaded. Retry, or replace it using Change / add profile image.");}}/> : null}

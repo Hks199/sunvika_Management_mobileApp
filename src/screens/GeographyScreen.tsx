@@ -86,15 +86,15 @@ function GeographyEditor({ editor, states, stateId, districtId, onClose, onSaved
   }
 
   return <Modal transparent animationType="slide" visible onRequestClose={() => { if (!busy) onClose(); }}>
-    <View className="flex-1 justify-end bg-black/40"><View className="max-h-[92%] rounded-t-3xl bg-brand-canvas px-5 pb-8 pt-5">
-      <View className="mb-4 flex-row items-center justify-between"><View><Text className="text-[10px] font-bold tracking-wide text-brand-navy">ORGANIZATION SETUP</Text><Text className="mt-1 text-xl font-bold text-brand-ink">{record ? "Edit" : "Add"} {singular[level]}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Close geography form" disabled={busy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white"><X size={19} color="#17204f" /></Pressable></View>
+    <View className="flex-1 justify-end bg-black/40"><View className="max-h-[92%] rounded-t-3xl bg-brand-canvas dark:bg-slate-950 px-5 pb-8 pt-5">
+      <View className="mb-4 flex-row items-center justify-between"><View><Text className="text-[10px] font-bold tracking-wide text-brand-navy dark:text-indigo-200">ORGANIZATION SETUP</Text><Text className="mt-1 text-xl font-bold text-brand-ink dark:text-slate-100">{record ? "Edit" : "Add"} {singular[level]}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Close geography form" disabled={busy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800"><X size={19} color="#17204f" /></Pressable></View>
       <ScrollView className="max-h-[78%]" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Field label="Name" accessibilityLabel="Name" value={name} onChangeText={setName} maxLength={100} editable={!busy} />
         {level !== "districts" ? <Field label={level === "states" ? "Code (optional)" : "Code"} accessibilityLabel="Code" value={code} onChangeText={setCode} maxLength={level === "states" ? 12 : 30} autoCapitalize="characters" editable={!busy} /> : null}
         {!record && level !== "states" ? <SelectField label="Parent state" value={parentState} options={states.map((state) => ({ value: state._id, label: state.name }))} placeholder="Choose state" disabled={busy} onChange={(value) => { setParentState(value); setParentDistrict(""); }} /> : null}
         {!record && level === "branches" ? <>
           <SelectField label="Parent district" value={parentDistrict} options={districts.rows.map((district) => ({ value: district._id, label: district.name }))} placeholder={parentState ? "Choose district" : "Choose state first"} loading={districts.loading} disabled={busy || !parentState} onChange={setParentDistrict} />
-          {districts.error ? <ErrorNotice message={districts.error} onRetry={() => void districts.reload()} /> : parentState && districts.loaded && !districts.rows.length ? <Text className="mb-4 text-xs leading-5 text-brand-muted">No active districts for this state. Add a district first.</Text> : null}
+          {districts.error ? <ErrorNotice message={districts.error} onRetry={() => void districts.reload()} /> : parentState && districts.loaded && !districts.rows.length ? <Text className="mb-4 text-xs leading-5 text-brand-muted dark:text-slate-400">No active districts for this state. Add a district first.</Text> : null}
         </> : null}
         {level === "branches" ? <Field label="Address" accessibilityLabel="Address" value={address} onChangeText={setAddress} maxLength={500} multiline numberOfLines={3} editable={!busy} /> : null}
         <SelectField label="Active" value={isActive} options={[{ value: "true", label: "Active" }, { value: "false", label: "Inactive" }]} placeholder="Choose status" disabled={busy} onChange={(value) => setIsActive(value || "true")} />
@@ -160,18 +160,18 @@ export default function GeographyScreen({ onBack }: { onBack: () => void }) {
         <ActionButton label="Add branch" icon={Plus} disabled={!states.rows.length} onPress={() => openCreate("branches")} />
       </View> : null}
       <Card>
-        <View className="mb-3 flex-row items-center justify-between"><Text className="text-base font-bold text-brand-ink">{titles[level]}</Text><RefreshAction loading={loading} onPress={() => void refresh()} /></View>
+        <View className="mb-3 flex-row items-center justify-between"><Text className="text-base font-bold text-brand-ink dark:text-slate-100">{titles[level]}</Text><RefreshAction loading={loading} onPress={() => void refresh()} /></View>
         <SelectField label="Geography level" value={level} options={Object.entries(titles).map(([value, title]) => ({ value, label: title }))} placeholder="Choose level" onChange={(value) => { setLevel((value || "states") as Level); setNotice(""); }} />
         {level !== "states" ? <SelectField label="State" value={stateId} options={states.rows.map((state) => ({ value: state._id, label: state.name }))} placeholder="Choose state" loading={states.loading} onChange={(value) => { setStateId(value); setDistrictId(""); setNotice(""); }} /> : null}
         {level === "branches" ? <SelectField label="District" value={districtId} options={districts.rows.map((district) => ({ value: district._id, label: district.name }))} placeholder="Choose district" disabled={!stateId} loading={districts.loading} onChange={(value) => { setDistrictId(value); setNotice(""); }} /> : null}
         {error ? <ErrorNotice message={error} onRetry={() => void refresh()} /> : null}
         {notice ? <View className="mb-4 rounded-xl bg-emerald-50 p-3"><Text accessibilityRole="alert" className="text-sm text-emerald-800">{notice}</Text></View> : null}
-        {loading ? <LoadingState label={`Loading ${level}…`} /> : current.rows.length ? <View className="gap-3">{current.rows.map((row) => <View key={row._id} className="rounded-xl border border-brand-line p-3.5">
-          <View className="mb-2 flex-row items-start justify-between gap-3"><Text className="flex-1 text-sm font-bold text-brand-ink">{row.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Edit ${row.name}`} onPress={() => { setNotice(""); setEditor({ level, record: row }); }} className="h-10 w-10 items-center justify-center rounded-lg bg-indigo-50"><Pencil size={16} color="#17247a" /></Pressable></View>
-          <Text className="text-xs leading-5 text-brand-muted">Code: {row.code || "—"}</Text>
-          <Text className="mt-1 text-xs leading-5 text-brand-muted">Active: {row.isActive === false ? "No" : "Yes"}</Text>
-          {row.address ? <Text className="mt-1 text-xs leading-5 text-brand-ink">Address: {row.address}</Text> : null}
-        </View>)}</View> : <Text className="py-7 text-center text-sm leading-5 text-brand-muted">{level !== "states" && (!stateId || (level === "branches" && !districtId)) ? "Choose a parent location to view records." : `No ${level} found.`}</Text>}
+        {loading ? <LoadingState label={`Loading ${level}…`} /> : current.rows.length ? <View className="gap-3">{current.rows.map((row) => <View key={row._id} className="rounded-xl border border-brand-line dark:border-slate-700 p-3.5">
+          <View className="mb-2 flex-row items-start justify-between gap-3"><Text className="flex-1 text-sm font-bold text-brand-ink dark:text-slate-100">{row.name}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Edit ${row.name}`} onPress={() => { setNotice(""); setEditor({ level, record: row }); }} className="h-10 w-10 items-center justify-center rounded-lg bg-indigo-50"><Pencil size={16} color="#17247a" /></Pressable></View>
+          <Text className="text-xs leading-5 text-brand-muted dark:text-slate-400">Code: {row.code || "—"}</Text>
+          <Text className="mt-1 text-xs leading-5 text-brand-muted dark:text-slate-400">Active: {row.isActive === false ? "No" : "Yes"}</Text>
+          {row.address ? <Text className="mt-1 text-xs leading-5 text-brand-ink dark:text-slate-100">Address: {row.address}</Text> : null}
+        </View>)}</View> : <Text className="py-7 text-center text-sm leading-5 text-brand-muted dark:text-slate-400">{level !== "states" && (!stateId || (level === "branches" && !districtId)) ? "Choose a parent location to view records." : `No ${level} found.`}</Text>}
       </Card>
     </Page>
     {editor ? <GeographyEditor editor={editor} states={states.rows} stateId={stateId} districtId={districtId} onClose={() => setEditor(null)} onSaved={saved} /> : null}
