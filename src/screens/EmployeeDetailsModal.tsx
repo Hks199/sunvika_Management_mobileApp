@@ -180,8 +180,9 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
     if (busy) return;
     setBusy(true); setActionError(""); setNotice("");
     try {
-      const response = await api.post<unknown>(`${path}/${kind}`);
-      setNotice(response.message || (kind === "resend-invitation" ? "Invitation request processed." : kind === "activate" ? `${entity} activated.` : `${entity} deactivated.`));
+      const response = await api.post<{ invitationSent?: boolean }>(`${path}/${kind}`);
+      if (kind === "resend-invitation" && !response.data.invitationSent) setActionError("The invitation email could not be sent. Check email configuration and try again.");
+      else setNotice(kind === "resend-invitation" ? "Invitation sent." : response.message || (kind === "activate" ? `${entity} activated.` : `${entity} deactivated.`));
       onSaved(); await load();
     } catch (cause) { setActionError(cause instanceof Error ? cause.message : "The requested action failed."); }
     finally { setBusy(false); }

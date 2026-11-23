@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { X } from "lucide-react-native";
 import * as DocumentPicker from "expo-document-picker";
 import { api } from "../api";
@@ -140,8 +140,9 @@ export default function EmployeeCreateModal({ onClose, onSaved, directory = "all
         }
         payload.profileImageUploadId = uploadId;
       }
-      await api.post("/employees", payload);
+      const result = await api.post<{ invitationSent: boolean }>("/employees", payload);
       onSaved(); onClose();
+      if (!result.data.invitationSent) Alert.alert("Employee created", "The invitation email could not be sent. Do not create the employee again. Open the employee details and resend the invitation after email is fixed.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not invite employee."); }
     finally { setBusy(false); }
   }

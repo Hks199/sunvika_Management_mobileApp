@@ -173,7 +173,22 @@ function LeadDetailsModal({
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [generateQuotation, setGenerateQuotation] = useState(false);
+  const [quoteRules, setQuoteRules] = useState<Array<{ stateId: string; minKW: number; maxKW: number; central: number; state: number }>>([]);
+  useEffect(() => { if (visible) void api.get<{ rules: Array<{ stateId: string; minKW: number; maxKW: number; central: number; state: number }> }>('/quotations/policy').then(r => setQuoteRules(r.data.rules)).catch(() => setError('Could not load quotation policy.')); }, [visible]);
+  const { user: quotationUser } = useAuth();
+  const quotationRole = typeof quotationUser?.role === 'string' ? quotationUser.role : quotationUser?.role?.code;
+  const [quotationOptions, setQuotationOptions] = useState<{ paymentModes: string[]; panelBrands: string[]; panelTechnologies: string[]; inverters: string[]; wattsOptions: string[]; categories: string[]; systemTypes: string[] }>({ paymentModes: [], panelBrands: [], panelTechnologies: [], inverters: [], wattsOptions: [], categories: [], systemTypes: [] });
+  const [editOptions, setEditOptions] = useState(false);
+  const [optionDraft, setOptionDraft] = useState({ paymentModes: '', panelBrands: '', panelTechnologies: '', inverters: '', wattsOptions: '', categories: '', systemTypes: '' });
+  useEffect(() => { if (visible) void api.get<typeof quotationOptions>('/quotations/options').then(r => setQuotationOptions(r.data)).catch(() => setError('Could not load quotation options.')); }, [visible]);
+  const quoteState = typeof record?.state === 'string' ? record.state : record?.state && typeof record.state === 'object' && '_id' in record.state ? String(record.state._id) : '';
+  async function saveQuotationOptions() {
+    try { const payload = { paymentModes: optionDraft.paymentModes.split('\n').map(x => x.trim()).filter(Boolean), panelBrands: optionDraft.panelBrands.split('\n').map(x => x.trim()).filter(Boolean), panelTechnologies: optionDraft.panelTechnologies.split('\n').map(x => x.trim()).filter(Boolean), inverters: optionDraft.inverters.split('\n').map(x => x.trim()).filter(Boolean), wattsOptions: optionDraft.wattsOptions.split('\n').map(x => x.trim()).filter(Boolean), categories: optionDraft.categories.split('\n').map(x => x.trim()).filter(Boolean), systemTypes: optionDraft.systemTypes.split('\n').map(x => x.trim()).filter(Boolean) }; const r = await api.patch<typeof quotationOptions>('/quotations/options', payload); setQuotationOptions(r.data); setEditOptions(false); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not save quotation options.'); }
+  }
+
   const [values, setValues] = useState<Record<string, string>>({});
+  const quoteRule = quoteRules.find(rule => rule.stateId === quoteState && Number(values.requiredCapacityKW) >= rule.minKW && Number(values.requiredCapacityKW) <= rule.maxKW);
   const [documents, setDocuments] = useState<Partial<Record<ConversionDocumentType, PickedDocument>>>({});
 
   const loadRecord = useCallback(async () => {
@@ -289,22 +304,13 @@ function LeadDetailsModal({
           payload.nextFollowUpDate = nextDate.toISOString();
         }
         if (generateQuotation) {
-          const capacity = Number(value("requiredCapacityKW"));
-          const rate = Number(value("ratePerKW"));
+          const rate = Number(value("rate")), requiredCapacityKW = Number(value("requiredCapacityKW")), panelCount = Number(value("panelCount")), wattsPerPanel = Number(value("wattsPerPanel"));
           if (status !== "QUOTATION_SENT") throw new Error("Quotation generation is only available for the quotation stage.");
-          if (!Number.isFinite(capacity) || capacity <= 0 || capacity > 100000) throw new Error("Enter a valid required capacity.");
-          if (!Number.isFinite(rate) || rate < 0 || rate > 100000000) throw new Error("Enter a valid rate per kW.");
-          if (!value("paymentMode") || !value("panelBrand") || !value("panelTechnology") || value("termsAndConditions").length < 10) {
-            throw new Error("Complete the quotation details and provide terms of at least 10 characters.");
-          }
-          payload.quotation = {
-            requiredCapacityKW: capacity,
-            ratePerKW: rate,
-            paymentMode: value("paymentMode"),
-            panelBrand: value("panelBrand"),
-            panelTechnology: value("panelTechnology"),
-            termsAndConditions: value("termsAndConditions"),
-          };
+          if (!value("rate") || !Number.isFinite(rate) || rate < 0 || rate > 100000000) throw new Error("Enter a valid rate.");
+          if (!value("requiredCapacityKW") || !Number.isFinite(requiredCapacityKW) || requiredCapacityKW <= 0 || requiredCapacityKW > 100000) throw new Error("Enter a valid required capacity in kW.");
+          if (!Number.isInteger(panelCount) || panelCount < 1 || !Number.isFinite(wattsPerPanel) || wattsPerPanel <= 0) throw new Error("Enter a valid panel count and watts per panel.");
+          if (!value("paymentMode") || !value("panelBrand") || !value("panelTechnology") || !value("inverter") || !value("systemType") || !value("phase") || !value("category") || !value("termsAndConditions")) throw new Error("Complete the quotation details and remark.");
+          payload.quotation = { rate, requiredCapacityKW, panelCount, wattsPerPanel, systemType: value("systemType"), phase: value("phase"), category: value("category"), inverterBattery: value("inverterBattery"), paymentMode: value("paymentMode"), panelBrand: value("panelBrand"), panelTechnology: value("panelTechnology"), inverter: value("inverter"), termsAndConditions: value("termsAndConditions") };
         }
         await api.patch(`/leads/${encodeURIComponent(leadId)}/status`, payload);
       } else if (action === "assignment") {
@@ -462,12 +468,23 @@ function LeadDetailsModal({
                             </Pressable>
                             {generateQuotation ? (
                               <>
-                                <Field label="Required capacity (kW)" keyboardType="decimal-pad" onChangeText={(text) => setValue("requiredCapacityKW", text)} value={values.requiredCapacityKW ?? ""} />
-                                <Field label="Rate per kW" keyboardType="decimal-pad" onChangeText={(text) => setValue("ratePerKW", text)} value={values.ratePerKW ?? ""} />
-                                <Field label="Payment mode" maxLength={100} onChangeText={(text) => setValue("paymentMode", text)} value={values.paymentMode ?? ""} />
-                                <Field label="Panel brand" maxLength={100} onChangeText={(text) => setValue("panelBrand", text)} value={values.panelBrand ?? ""} />
-                                <Field label="Panel technology" maxLength={100} onChangeText={(text) => setValue("panelTechnology", text)} value={values.panelTechnology ?? ""} />
-                                <Field label="Terms and conditions" maxLength={5000} multiline numberOfLines={4} onChangeText={(text) => setValue("termsAndConditions", text)} value={values.termsAndConditions ?? ""} />
+                                <Text className="mb-3 text-sm text-brand-muted dark:text-slate-400">Rate is the total project price.</Text>
+                                {values.requiredCapacityKW ? (quoteRule ? <Text className="mb-3 text-sm text-brand-ink dark:text-slate-100">Central subsidy: Rs. {quoteRule.central.toLocaleString('en-IN')} | State subsidy: Rs. {quoteRule.state.toLocaleString('en-IN')} {values.rate ? `| Estimated net cost: Rs. ${(Number(values.rate) - quoteRule.central - quoteRule.state).toLocaleString('en-IN')}` : ''}. Subject to approval.</Text> : <Text className="mb-3 text-sm text-red-700">No subsidy setting matches this state and capacity. Ask MD to configure quotation settings.</Text>) : null}
+                                {!quotationOptions.panelBrands.length || !quotationOptions.panelTechnologies.length || !quotationOptions.inverters.length || !quotationOptions.wattsOptions.length || !quotationOptions.categories.length || !quotationOptions.systemTypes.length ? <Text className="mb-3 text-sm text-amber-700">An MD must add panel brand, technology, inverter, wattage, category and system type options before a quotation can be generated.</Text> : null}
+                                {quotationRole === 'MD' ? <><ActionButton label={editOptions ? 'Close quotation options' : 'Manage quotation options'} kind="secondary" onPress={() => { setOptionDraft({ paymentModes: quotationOptions.paymentModes.join('\n'), panelBrands: quotationOptions.panelBrands.join('\n'), panelTechnologies: quotationOptions.panelTechnologies.join('\n'), inverters: quotationOptions.inverters.join('\n'), wattsOptions: quotationOptions.wattsOptions.join('\n'), categories: quotationOptions.categories.join('\n'), systemTypes: quotationOptions.systemTypes.join('\n') }); setEditOptions(!editOptions); }}/>{editOptions ? <><Text>Enter one option per line. Use positive numbers for watts.</Text>{(['paymentModes','panelBrands','panelTechnologies','inverters','wattsOptions','categories','systemTypes'] as const).map(key => <Field key={key} label={key === 'paymentModes' ? 'Payment modes' : key === 'panelBrands' ? 'Panel brands' : key === 'panelTechnologies' ? 'Panel technologies' : key === 'inverters' ? 'Inverters' : key === 'wattsOptions' ? 'Watts per panel' : key === 'categories' ? 'Categories' : 'System types'} multiline value={optionDraft[key]} onChangeText={text => setOptionDraft(current => ({ ...current, [key]: text }))}/>)}<ActionButton label="Save options" onPress={() => void saveQuotationOptions()}/></> : null}</> : null}
+                                <SelectField label="System type" value={values.systemType ?? ''} options={quotationOptions.systemTypes.map(value => ({ value, label: value }))} placeholder="Choose system type" onChange={text => setValue('systemType', text)}/>
+                                <SelectField label="Phase" value={values.phase ?? ''} options={[{ value: '1-Phase', label: '1-Phase' }, { value: '3-Phase', label: '3-Phase' }]} placeholder="Choose phase" onChange={text => setValue('phase', text)}/>
+                                <SelectField label="Category" value={values.category ?? ''} options={quotationOptions.categories.map(value => ({ value, label: value }))} placeholder="Choose category" onChange={text => setValue('category', text)}/>
+                                <Field label="Inverter battery (optional)" value={values.inverterBattery ?? ''} onChangeText={text => setValue('inverterBattery', text)}/>
+                                <Field label="Rate" keyboardType="decimal-pad" onChangeText={text => setValue('rate', text)} value={values.rate ?? ''} />
+                                <Field label="Number of panels" keyboardType="number-pad" onChangeText={text => setValue('panelCount', text)} value={values.panelCount ?? ''} />
+                                <SelectField label="Watts per panel" value={values.wattsPerPanel ?? ''} options={quotationOptions.wattsOptions.map(value => ({ value, label: value }))} placeholder="Choose watts per panel" onChange={text => setValue('wattsPerPanel', text)}/>
+                                <Field label="Required capacity (kW)" keyboardType="decimal-pad" onChangeText={text => setValue('requiredCapacityKW', text)} value={values.requiredCapacityKW ?? ''} />
+                                <SelectField label="Payment mode" value={values.paymentMode ?? ''} options={quotationOptions.paymentModes.map(value => ({ value, label: value }))} placeholder="Choose payment mode" onChange={text => setValue('paymentMode', text)}/>
+                                <SelectField label="Panel brand" value={values.panelBrand ?? ''} options={quotationOptions.panelBrands.map(value => ({ value, label: value }))} placeholder="Choose panel brand" onChange={text => setValue('panelBrand', text)}/>
+                                <SelectField label="Panel technology" value={values.panelTechnology ?? ''} options={quotationOptions.panelTechnologies.map(value => ({ value, label: value }))} placeholder="Choose panel technology" onChange={text => setValue('panelTechnology', text)}/>
+                                <SelectField label="Inverter" value={values.inverter ?? ''} options={quotationOptions.inverters.map(value => ({ value, label: value }))} placeholder="Choose inverter" onChange={text => setValue('inverter', text)}/>
+                                <Field label="Remark" maxLength={5000} multiline numberOfLines={4} onChangeText={text => setValue('termsAndConditions', text)} value={values.termsAndConditions ?? ''} />
                               </>
                             ) : null}
                           </>

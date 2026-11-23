@@ -179,7 +179,7 @@ export default function QuotationDetailsModal({ quotationId, onClose, onSaved }:
             <Text className="mt-3 text-xs leading-5 text-brand-muted dark:text-slate-400">Choose WhatsApp from the device share menu, then select the recipient. WhatsApp does not allow a PDF to be attached to a preselected chat.</Text>
           </Card> : null}
           <Card className="mb-4"><Text className="mb-1 text-base font-bold text-brand-ink dark:text-slate-100">Quotation information</Text>
-            {Object.entries(record).filter(([key]) => !hiddenField.test(key)).map(([key, value]) => <View key={key} className="border-b border-brand-line dark:border-slate-700 py-3"><Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted dark:text-slate-400">{label(key)}</Text><Text className="mt-1 text-sm leading-5 text-brand-ink dark:text-slate-100">{display(value)}</Text></View>)}
+            {Object.entries(record).filter(([key]) => !hiddenField.test(key)).map(([key, value]) => <View key={key} className="border-b border-brand-line dark:border-slate-700 py-3"><Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted dark:text-slate-400">{key === "termsAndConditions" && record.rate != null ? "Remark" : label(key)}</Text><Text className="mt-1 text-sm leading-5 text-brand-ink dark:text-slate-100">{display(value)}</Text></View>)}
           </Card>
           {historyLoading || historyError || history !== null ? <Card className="mb-4">
             <Text className="mb-2 text-base font-bold text-brand-ink dark:text-slate-100">Share history</Text>
