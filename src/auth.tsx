@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     const result = await api.post<{ accessToken?: string; employee?: User; user?: User }>(
       "/auth/login",
-      { email: email.trim().toLowerCase(), password },
+      { identifier: email.trim(), password },
     );
     if (!result.data?.accessToken) throw new Error("The API did not return an access token.");
     await tokenStore.set(result.data.accessToken);

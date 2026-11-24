@@ -43,8 +43,8 @@ export default function LoginScreen() {
     if (submitting.current || retrySeconds > 0) return;
     setError("");
     setNotice("");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || email.length > 254) {
-      setError("Enter a valid work email address.");
+    if (email.length > 254 || (forgot ? !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) : !(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || /^[A-Za-z0-9][A-Za-z0-9_-]{1,39}$/.test(email.trim())))) {
+      setError(forgot ? "Enter a valid work email address." : "Enter a valid user ID or email address.");
       return;
     }
     if (!forgot && (!password || password.length > 128)) {
@@ -107,14 +107,14 @@ export default function LoginScreen() {
         </View>
         <View className="rounded-2xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
           <Field
-            label="Work email"
+            label={forgot ? "Work email" : "User ID or email"}
             autoCapitalize="none"
             autoComplete="username"
             autoCorrect={false}
-            keyboardType="email-address"
+            keyboardType={forgot ? "email-address" : "default"}
             maxLength={254}
             onChangeText={setEmail}
-            placeholder="you@company.com"
+            placeholder={forgot ? "you@company.com" : "User ID or email"}
             value={email}
             leftIcon={<Mail size={17} color="#78819b" />}
           />

@@ -48,6 +48,7 @@ export default function EmployeeCreateModal({ onClose, onSaved, directory = "all
   const [uploadedImage, setUploadedImage] = useState<{ file: DocumentPicker.DocumentPickerAsset; uploadId: string } | null>(null);
   const stateId = values.state ?? "";
   const districtId = values.district ?? "";
+  const directCp = actorRoleCode === "RM" && (directory === "cp" || values.roleCode === "CP");
 
   useEffect(() => {
     let active = true;
@@ -118,13 +119,16 @@ export default function EmployeeCreateModal({ onClose, onSaved, directory = "all
       if (!value("firstName") || value("firstName").length > 80 || !value("lastName") || value("lastName").length > 80) throw new Error("First and last names are required (up to 80 characters).");
       if (value("middleName").length > 80) throw new Error("Middle name must be 80 characters or fewer.");
       const email = value("email").toLowerCase();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new Error("Enter a valid work email address.");
+      if ((!directCp || email) && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)) throw new Error("Enter a valid work email address.");
+      const password = values.password ?? "";
+      if (directCp && (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{12,72}$/.test(password) || encodeURIComponent(password).replace(/%[A-F\d]{2}|./gi, 'x').length > 72)) throw new Error("Use 12 to 72 bytes with uppercase, lowercase and a number for the password.");
+      if (directCp && password !== (values.confirmPassword ?? "")) throw new Error("Passwords do not match.");
       if (!/^\+?[1-9]\d{7,14}$/.test(value("mobileNumber"))) throw new Error("Enter a valid mobile number.");
       if (!roles.some((role) => role.value === value("roleCode"))) throw new Error("Select a valid role.");
       if (value("addressLine").length < 3 || value("addressLine").length > 300 || !objectId(stateId) || !objectId(districtId)) throw new Error("Enter an address and select its state and district.");
       if (value("city").length > 100 || (value("pincode") && !/^[A-Za-z0-9 -]{3,12}$/.test(value("pincode")))) throw new Error("Check the city and postal code.");
       if (value("branch") && !objectId(value("branch"))) throw new Error("Select a valid branch.");
-      const payload: RecordValue = { employeeCode, firstName: value("firstName"), ...(value("middleName") ? { middleName: value("middleName") } : {}), lastName: value("lastName"), email, mobileNumber: value("mobileNumber"), roleCode: value("roleCode"),
+      const payload: RecordValue = { employeeCode, firstName: value("firstName"), ...(value("middleName") ? { middleName: value("middleName") } : {}), lastName: value("lastName"), ...(email ? { email } : {}), ...(directCp ? { password } : {}), mobileNumber: value("mobileNumber"), roleCode: value("roleCode"),
         address: { addressLine: value("addressLine"), state: stateId, district: districtId, ...(value("city") ? { city: value("city") } : {}), ...(value("pincode") ? { pincode: value("pincode") } : {}) }, ...(value("branch") ? { branch: value("branch") } : {}) };
       setBusy(true);
       if (image) {
@@ -140,18 +144,20 @@ export default function EmployeeCreateModal({ onClose, onSaved, directory = "all
         }
         payload.profileImageUploadId = uploadId;
       }
-      const result = await api.post<{ invitationSent: boolean }>("/employees", payload);
+      const result = await api.post<{ invitationSent: boolean; credentialsCreated?: boolean }>("/employees", payload);
       onSaved(); onClose();
-      if (!result.data.invitationSent) Alert.alert("Employee created", "The invitation email could not be sent. Do not create the employee again. Open the employee details and resend the invitation after email is fixed.");
+      if (result.data.credentialsCreated) Alert.alert("Channel partner created", `User ID: ${employeeCode}. Share the password securely.`);
+      else if (!result.data.invitationSent) Alert.alert("Employee created", "The invitation email could not be sent. Do not create the employee again. Open the employee details and resend the invitation after email is fixed.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not invite employee."); }
     finally { setBusy(false); }
   }
 
   return <Modal transparent animationType="slide" visible onRequestClose={() => { if (!busy) onClose(); }}>
     <View className="flex-1 justify-end bg-black/40"><View className="max-h-[92%] rounded-t-3xl bg-brand-canvas dark:bg-slate-950 px-5 pb-8 pt-5">
-      <View className="mb-4 flex-row items-center justify-between"><View><Text className="text-[10px] font-bold tracking-wide text-brand-navy dark:text-indigo-200">TEAM ONBOARDING</Text><Text className="mt-1 text-xl font-bold text-brand-ink dark:text-slate-100">{directory === "cp" ? "Invite channel partner" : "Invite employee"}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Close employee invitation" disabled={busy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800"><X size={19} color="#17204f" /></Pressable></View>
+      <View className="mb-4 flex-row items-center justify-between"><View><Text className="text-[10px] font-bold tracking-wide text-brand-navy dark:text-indigo-200">TEAM ONBOARDING</Text><Text className="mt-1 text-xl font-bold text-brand-ink dark:text-slate-100">{directCp ? "Create channel partner" : "Invite employee"}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Close employee invitation" disabled={busy} onPress={onClose} className="h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800"><X size={19} color="#17204f" /></Pressable></View>
       <ScrollView className="max-h-[78%]" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        {fields.slice(0, 6).map((field) => <Field key={field.key} label={field.label} accessibilityLabel={field.label} maxLength={field.max} value={values[field.key] ?? ""} onChangeText={(value) => setValue(field.key, value)} editable={!busy} placeholder={field.placeholder ?? field.label} autoCapitalize={field.key === "email" ? "none" : field.key === "employeeCode" ? "characters" : "words"} keyboardType={field.key === "email" ? "email-address" : field.key === "mobileNumber" ? "phone-pad" : "default"} />)}
+        {fields.slice(0, 6).map((field) => <Field key={field.key} label={directCp && field.key === "employeeCode" ? "User ID (CP code)" : directCp && field.key === "email" ? "Email (optional)" : field.label} accessibilityLabel={field.label} maxLength={field.max} value={values[field.key] ?? ""} onChangeText={(value) => setValue(field.key, value)} editable={!busy} placeholder={field.placeholder ?? field.label} autoCapitalize={field.key === "email" ? "none" : field.key === "employeeCode" ? "characters" : "words"} keyboardType={field.key === "email" ? "email-address" : field.key === "mobileNumber" ? "phone-pad" : "default"} />)}
+        {directCp ? <><Field label="Password" secureTextEntry autoCapitalize="none" autoComplete="new-password" maxLength={72} value={values.password ?? ""} onChangeText={value => setValue("password", value)} editable={!busy}/><Text className="mb-3 text-xs text-brand-muted dark:text-slate-400">Use 12 to 72 bytes with uppercase, lowercase and a number.</Text><Field label="Confirm password" secureTextEntry autoCapitalize="none" autoComplete="new-password" maxLength={72} value={values.confirmPassword ?? ""} onChangeText={value => setValue("confirmPassword", value)} editable={!busy}/></> : null}
         <SelectField label="Role" value={values.roleCode ?? ""} options={roles} placeholder={roles.length ? "Choose role" : "No roles available"} loading={rolesLoading} disabled={busy || !roles.length} onChange={(value) => setValue("roleCode", value)} />
         {roleError ? <ErrorNotice message={roleError} onRetry={() => setRoleReload((current) => current + 1)} /> : null}
         {fields.slice(6).map((field) => <Field key={field.key} label={field.label} accessibilityLabel={field.label} maxLength={field.max} value={values[field.key] ?? ""} onChangeText={(value) => setValue(field.key, value)} editable={!busy} />)}
