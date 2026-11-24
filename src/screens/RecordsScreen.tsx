@@ -145,7 +145,7 @@ function geographyOptions(data: unknown): SelectOption[] {
 const emptyRecordFilters = { stateId: "", districtId: "", branchId: "", dateFrom: "", dateTo: "", employeeName: "", cpType: "", customerType: "" };
 
 const leadStatuses = ["PENDING", "INTERESTED", "NOT_INTERESTED", "SITE_VISITED", "NEED_FOLLOWUP", "QUOTATION_SENT", "LOST"];
-const conversionDocumentTypes = ["PAN", "AADHAAR", "ELECTRICITY_BILL", "BANK_PASSBOOK"] as const;
+const conversionDocumentTypes = ["PAN", "AADHAAR", "ELECTRICITY_BILL", "BANK_PASSBOOK", "GEO_TAG_PHOTO"] as const;
 type ConversionDocumentType = typeof conversionDocumentTypes[number];
 type PickedDocument = DocumentPicker.DocumentPickerAsset;
 type LeadAction = "status" | "assignment" | "edit" | "convert";
@@ -188,8 +188,34 @@ function LeadDetailsModal({
   }
 
   const [values, setValues] = useState<Record<string, string>>({});
+  const [assignees, setAssignees] = useState<Array<{ _id: string; employeeCode: string; firstName: string; lastName: string; role?: { name?: string } }>>([]);
+  const [assigneesLoading, setAssigneesLoading] = useState(false);
+  const [assigneesError, setAssigneesError] = useState('');
+  useEffect(() => {
+    if (action !== 'assignment') return;
+    let active = true; setAssigneesLoading(true); setAssigneesError(''); setAssignees([]);
+    void api.get<typeof assignees>(`/leads/${encodeURIComponent(leadId)}/assignment-options`)
+      .then(r => { if (active) setAssignees(r.data); })
+      .catch(e => { if (active) setAssigneesError(e instanceof Error ? e.message : 'Unable to load direct reports'); })
+      .finally(() => { if (active) setAssigneesLoading(false); });
+    return () => { active = false; };
+  }, [action, leadId]);
+
   const quoteRule = quoteRules.find(rule => rule.stateId === quoteState && Number(values.requiredCapacityKW) >= rule.minKW && Number(values.requiredCapacityKW) <= rule.maxKW);
   const [documents, setDocuments] = useState<Partial<Record<ConversionDocumentType, PickedDocument>>>({});
+  const [conversionLoading, setConversionLoading] = useState(false);
+  const [conversionError, setConversionError] = useState('');
+  const [conversionQuoteId, setConversionQuoteId] = useState('');
+  useEffect(() => {
+    if (action !== 'convert') return;
+    let active = true; setConversionLoading(true); setConversionError(''); setConversionQuoteId('');
+    void api.get<{ quotation: Record<string, unknown> | null }>(`/customers/from-lead/${encodeURIComponent(leadId)}/options`)
+      .then(response => { if (!active) return; const quote = response.data.quotation; if (!quote) return; setConversionQuoteId(String(quote.quotationId ?? '')); setValues(current => { const next = { ...current }; for (const key of ['systemType','phase','category','inverterBattery','requiredCapacityKW','rate','panelCount','wattsPerPanel','paymentMode','panelBrand','panelTechnology','inverter','quotationRemark']) if (quote[key] != null) next[key] = String(quote[key]); return next; }); })
+      .catch(e => { if (active) setConversionError(e instanceof Error ? e.message : 'Unable to load quotation details'); })
+      .finally(() => { if (active) setConversionLoading(false); });
+    return () => { active = false; };
+  }, [action, leadId]);
+
 
   const loadRecord = useCallback(async () => {
     if (!leadId) return;
@@ -272,7 +298,7 @@ function LeadDetailsModal({
     setError("");
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+        type: documentType === "GEO_TAG_PHOTO" ? ["image/jpeg", "image/png", "image/webp"] : ["application/pdf", "image/jpeg", "image/png", "image/webp"],
         copyToCacheDirectory: true,
         multiple: false,
       });
@@ -314,7 +340,7 @@ function LeadDetailsModal({
         }
         await api.patch(`/leads/${encodeURIComponent(leadId)}/status`, payload);
       } else if (action === "assignment") {
-        if (!objectId.test(value("assignedTo"))) throw new Error("Enter a valid 24-character employee ID.");
+        if (!assignees.some(person => person._id === value("assignedTo"))) throw new Error("Choose an eligible direct report.");
         await api.patch(`/leads/${encodeURIComponent(leadId)}/assignment`, { assignedTo: value("assignedTo") });
       } else if (action === "edit") {
         if (value("customerName").length < 2 || !/^\+?[0-9]{10,15}$/.test(value("mobileNumber"))) {
@@ -330,17 +356,17 @@ function LeadDetailsModal({
         });
       } else {
         const capacity = Number(value("requiredCapacityKW"));
-        const rate = Number(value("ratePerKW"));
+        const rate = Number(value("rate"));
         if (!Number.isFinite(capacity) || capacity <= 0 || capacity > 100000) throw new Error("Enter a valid required capacity.");
-        if (!Number.isFinite(rate) || rate < 0 || rate > 100000000) throw new Error("Enter a valid rate per kW.");
-        if (!value("paymentMode") || !value("panelBrand") || !value("panelTechnology") || !value("remark")) {
+        if (!value("rate") || !Number.isFinite(rate) || rate < 0 || rate > 100000000) throw new Error("Enter a valid rate.");
+        if (!value("paymentMode") || !value("panelBrand") || !value("panelTechnology") || !value("remark") || !value("systemType") || !value("phase") || !value("category") || !value("inverter") || !value("quotationRemark") || !Number.isInteger(Number(value("panelCount"))) || Number(value("panelCount")) < 1 || Number(value("wattsPerPanel")) <= 0) {
           throw new Error("Complete all project and conversion fields.");
         }
         for (const documentType of conversionDocumentTypes) {
           const file = documents[documentType];
           if (!file) throw new Error(`Choose the required ${documentType.replaceAll("_", " ").toLowerCase()} document.`);
           const mimeType = file.mimeType ?? "";
-          if (!["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(mimeType)) {
+          if (!(documentType === "GEO_TAG_PHOTO" ? ["image/jpeg", "image/png", "image/webp"] : ["application/pdf", "image/jpeg", "image/png", "image/webp"]).includes(mimeType)) {
             throw new Error(`${documentType.replaceAll("_", " ")} must be a PDF, JPEG, PNG, or WebP file.`);
           }
           if (!file.size || file.size < 1 || file.size > 20 * 1024 * 1024) {
@@ -365,7 +391,7 @@ function LeadDetailsModal({
         );
         const reservations = reservationResponse.data;
         if (!Array.isArray(reservations) || reservations.length !== conversionDocumentTypes.length) {
-          throw new Error("The API did not reserve all four required document uploads.");
+          throw new Error("The API did not reserve all five required document uploads.");
         }
         for (const reservation of reservations) {
           const file = files.find((entry) => entry.documentType === reservation.documentType)?.file;
@@ -386,7 +412,7 @@ function LeadDetailsModal({
         }
         await api.post(`/customers/from-lead/${encodeURIComponent(leadId)}`, {
           requiredCapacityKW: capacity,
-          ratePerKW: rate,
+          ratePerKW: rate, rate, panelCount: Number(value("panelCount")), wattsPerPanel: Number(value("wattsPerPanel")), systemType: value("systemType"), phase: value("phase"), category: value("category"), inverter: value("inverter"), inverterBattery: value("inverterBattery"), quotationRemark: value("quotationRemark"), ...(conversionQuoteId ? { quotationId: conversionQuoteId } : {}),
           paymentMode: value("paymentMode"),
           panelBrand: value("panelBrand"),
           panelTechnology: value("panelTechnology"),
@@ -492,7 +518,7 @@ function LeadDetailsModal({
                       </>
                     ) : null}
                     {action === "assignment" ? (
-                      <Field label="Employee ID" autoCapitalize="none" maxLength={24} onChangeText={(text) => setValue("assignedTo", text)} value={values.assignedTo ?? ""} />
+                      <><SelectField label="Assign to" value={values.assignedTo ?? ""} options={assignees.map(person => ({ value: person._id, label: `${person.firstName} ${person.lastName} (${person.employeeCode}${person.role?.name ? ` - ${person.role.name}` : ""})` }))} placeholder={assignees.length ? "Choose a direct report" : "No eligible direct reports available"} loading={assigneesLoading} onChange={text => setValue("assignedTo", text)}/>{assigneesError ? <ErrorNotice message={assigneesError}/> : null}</>
                     ) : null}
                     {action === "edit" ? (
                       <>
@@ -505,13 +531,19 @@ function LeadDetailsModal({
                     ) : null}
                     {action === "convert" ? (
                       <>
-                        <Text className="mb-3 text-xs leading-5 text-brand-muted dark:text-slate-400">Upload one PDF, JPEG, PNG, or WebP document for each required type. Maximum file size: 20 MB.</Text>
-                        <Field label="Capacity (kW)" keyboardType="decimal-pad" onChangeText={(text) => setValue("requiredCapacityKW", text)} value={values.requiredCapacityKW ?? ""} />
-                        <Field label="Rate per kW" keyboardType="decimal-pad" onChangeText={(text) => setValue("ratePerKW", text)} value={values.ratePerKW ?? ""} />
-                        <Field label="Payment mode" maxLength={100} onChangeText={(text) => setValue("paymentMode", text)} value={values.paymentMode ?? ""} />
-                        <Field label="Panel brand" maxLength={100} onChangeText={(text) => setValue("panelBrand", text)} value={values.panelBrand ?? ""} />
-                        <Field label="Panel technology" maxLength={100} onChangeText={(text) => setValue("panelTechnology", text)} value={values.panelTechnology ?? ""} />
-                        <Field label="Conversion note" maxLength={1000} multiline numberOfLines={3} onChangeText={(text) => setValue("remark", text)} value={values.remark ?? ""} />
+                        <Text className="mb-3 text-xs leading-5 text-brand-muted dark:text-slate-400">Quotation details are prefilled when available. Upload all four documents and a geotag photo.</Text>
+                        {conversionLoading ? <LoadingState label="Loading quotation details..."/> : null}{conversionError ? <ErrorNotice message={conversionError}/> : null}
+                        {(['systemType','phase','category','wattsPerPanel','paymentMode','panelBrand','panelTechnology','inverter'] as const).map(key => {
+                          const options = key === 'systemType' ? quotationOptions.systemTypes : key === 'phase' ? ['1-Phase','3-Phase'] : key === 'category' ? quotationOptions.categories : key === 'wattsPerPanel' ? quotationOptions.wattsOptions : key === 'paymentMode' ? quotationOptions.paymentModes : key === 'panelBrand' ? quotationOptions.panelBrands : key === 'panelTechnology' ? quotationOptions.panelTechnologies : quotationOptions.inverters;
+                          const names: Record<string,string> = {systemType:'System type',phase:'Phase',category:'Category',wattsPerPanel:'Watts per panel',paymentMode:'Payment mode',panelBrand:'Panel brand',panelTechnology:'Panel technology',inverter:'Inverter'};
+                          return <SelectField key={key} label={names[key]} value={values[key] ?? ''} options={Array.from(new Set([values[key], ...options].filter((v): v is string => Boolean(v)))).map(value => ({value,label:value}))} placeholder={`Choose ${names[key].toLowerCase()}`} onChange={text => setValue(key,text)}/>;
+                        })}
+                        <Field label="Inverter battery (optional)" value={values.inverterBattery ?? ''} onChangeText={text => setValue('inverterBattery',text)}/>
+                        <Field label="Required capacity (kW)" keyboardType="decimal-pad" value={values.requiredCapacityKW ?? ''} onChangeText={text => setValue('requiredCapacityKW',text)}/>
+                        <Field label="Rate" keyboardType="decimal-pad" value={values.rate ?? ''} onChangeText={text => setValue('rate',text)}/>
+                        <Field label="Number of panels" keyboardType="number-pad" value={values.panelCount ?? ''} onChangeText={text => setValue('panelCount',text)}/>
+                        <Field label="Remark" value={values.quotationRemark ?? ''} multiline onChangeText={text => setValue('quotationRemark',text)}/>
+                        <Field label="Conversion note" maxLength={1000} multiline numberOfLines={3} onChangeText={text => setValue('remark',text)} value={values.remark ?? ''}/>
                         {conversionDocumentTypes.map((documentType) => (
                           <View key={documentType} className="mb-3">
                             <Text className="mb-1.5 text-xs font-semibold text-brand-ink dark:text-slate-100">{formatValue(documentType)} document</Text>
@@ -524,7 +556,7 @@ function LeadDetailsModal({
                     ) : null}
                     <View className="mt-1 flex-row gap-2">
                       <View className="flex-1"><ActionButton label="Cancel" kind="secondary" disabled={busy} onPress={() => setAction(null)} /></View>
-                      <View className="flex-1"><ActionButton label={busy ? (action === "convert" ? "Uploading…" : "Saving…") : action === "convert" ? "Upload & convert" : "Save"} disabled={busy} onPress={() => void submitAction()} /></View>
+                      <View className="flex-1"><ActionButton label={busy ? (action === "convert" ? "Uploading…" : "Saving…") : action === "convert" ? "Upload & convert" : "Save"} disabled={busy || (action === "convert" && (conversionLoading || !!conversionError))} onPress={() => void submitAction()} /></View>
                     </View>
                   </Card>
                 ) : null}

@@ -48,7 +48,7 @@ function display(value: unknown): string {
 }
 
 function Details({ record }: { record: RecordValue }) {
-  return <>{Object.entries(record).filter(([key]) => !hiddenField.test(key)).map(([key, value]) => (
+  return <>{Object.entries(record).filter(([key]) => !hiddenField.test(key) && !(record.isFixedRate && key === "ratePerKW")).map(([key, value]) => (
     <View key={key} className="border-b border-brand-line dark:border-slate-700 py-3">
       <Text className="text-[10px] font-semibold uppercase tracking-wide text-brand-muted dark:text-slate-400">{label(key)}</Text>
       <Text className="mt-1 text-sm leading-5 text-brand-ink dark:text-slate-100">{display(value)}</Text>
@@ -69,7 +69,7 @@ const editFields = [
   { key: "panelTechnology", label: "Panel technology", maxLength: 100 },
 ];
 const statuses = ["ONBOARDING", "ACTIVE", "COMPLETED", "CANCELLED"];
-const documentTypes = ["PAN", "AADHAAR", "ELECTRICITY_BILL", "BANK_PASSBOOK"];
+const documentTypes = ["PAN", "AADHAAR", "ELECTRICITY_BILL", "BANK_PASSBOOK", "GEO_TAG_PHOTO"];
 type DocumentPreview = { documentId: string; url: string; contentType: string; fileName: string };
 
 function editValue(value: unknown): string {
@@ -103,6 +103,8 @@ export default function CustomerDetailsModal({ customerId, onClose, onSaved }: {
   const [values, setValues] = useState<Record<string, string>>({});
   const [documentBusy, setDocumentBusy] = useState(false);
   const [documentError, setDocumentError] = useState("");
+  const [rejectId, setRejectId] = useState("");
+  const [rejectRemark, setRejectRemark] = useState("");
   const [preview, setPreview] = useState<DocumentPreview | null>(null);
   const [download, setDownload] = useState<{ documentId: string; url: string } | null>(null);
   const [documents, setDocuments] = useState<RecordValue[] | null>(null);
@@ -179,10 +181,7 @@ export default function CustomerDetailsModal({ customerId, onClose, onSaved }: {
       if (!content.byteLength || content.byteLength > 20 * 1024 * 1024) throw new Error("Choose a nonempty document no larger than 20 MB.");
       const reservation = await api.post<{ uploadId: string; uploadUrl: string }>(`${path}/documents/upload-url`, { documentType, fileName: file.name, mimeType, fileSize: content.byteLength });
       if (!reservation.data?.uploadId || !reservation.data.uploadUrl) throw new Error("The API did not return a valid upload reservation.");
-      const destination = new URL(reservation.data.uploadUrl);
-      if (destination.protocol !== "https:" && !(destination.protocol === "http:" && destination.hostname === "localhost")) throw new Error("The upload URL must use HTTPS.");
-      const result = await fetch(destination.toString(), { method: "PUT", headers: { "Content-Type": mimeType }, body: content, credentials: "omit", redirect: "error" });
-      if (!result.ok) throw new Error(`Document upload failed (${result.status}).`);
+      await api.putBinary(`${path}/documents/${encodeURIComponent(reservation.data.uploadId)}/upload`, content, mimeType);
       await api.post(`${path}/documents/complete`, { uploadId: reservation.data.uploadId });
       setFile(null);
       setDocumentType("");
@@ -237,19 +236,25 @@ export default function CustomerDetailsModal({ customerId, onClose, onSaved }: {
     finally { setBusy(false); }
   }
 
-  async function documentAction(document: RecordValue, action: "preview" | "download" | "verify") {
+  async function documentAction(document: RecordValue, action: "preview" | "download" | "verify" | "reject" | "mis-verify" | "mis-pending") {
     if (documentBusy) return;
     const documentId = String(document._id ?? document.id ?? "");
     setDocumentError("");
     if (!documentId) { setDocumentError("The document ID is missing from the API response."); return; }
     if (action === "preview" && preview?.documentId === documentId) { setPreview(null); return; }
-    if (action === "verify" && document.verificationStatus === "VERIFIED") return;
+    if ((action === "verify" || action === "reject") && document.verificationStatus !== "PENDING") return;
+    if ((action === "reject" || action === "mis-pending") && !rejectRemark.trim()) { setDocumentError("Enter a rejection reason."); return; }
     setDocumentBusy(true);
     try {
       const documentPath = `${path}/documents/${encodeURIComponent(documentId)}`;
-      if (action === "verify") {
-        await api.patch(`${documentPath}/verification`, { status: "VERIFIED" });
-        setNotice("Document verified.");
+      if (action === "mis-verify" || action === "mis-pending") {
+        await api.patch(`${documentPath}/mis-verification`, action === "mis-verify" ? { status: "VERIFIED" } : { status: "PENDING", remark: rejectRemark.trim() });
+        setRejectId(""); setRejectRemark(""); setNotice(action === "mis-verify" ? "MIS verification saved." : "Document marked pending with your remark.");
+        onSaved(); await load(); if (documents !== null) await loadDocuments();
+      } else if (action === "verify" || action === "reject") {
+        await api.patch(`${documentPath}/verification`, action === "verify" ? { status: "VERIFIED" } : { status: "REJECTED", remark: rejectRemark.trim() });
+        setRejectId(""); setRejectRemark("");
+        setNotice(action === "verify" ? "Document verified." : "Document rejected and sent back to the channel partner.");
         onSaved();
         await load();
         if (documents !== null) await loadDocuments();
@@ -290,7 +295,7 @@ export default function CustomerDetailsModal({ customerId, onClose, onSaved }: {
               {actionError ? <ErrorNotice message={actionError} /> : null}
               {editing ? <Card className="mb-4">
                 <Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">Edit customer</Text>
-                {editFields.map((field) => <Field key={field.key} accessibilityLabel={field.label} label={field.label} value={values[field.key] ?? ""} editable={!busy} keyboardType={field.numeric ? "decimal-pad" : field.key.includes("Number") ? "phone-pad" : "default"} maxLength={field.maxLength} multiline={field.multiline} numberOfLines={field.multiline ? 3 : 1} onChangeText={(text) => setValues((current) => ({ ...current, [field.key]: text }))} />)}
+                {editFields.map((field) => <Field key={field.key} accessibilityLabel={field.label} label={field.key === "ratePerKW" && record?.isFixedRate ? "Rate" : field.label} value={values[field.key] ?? ""} editable={!busy} keyboardType={field.numeric ? "decimal-pad" : field.key.includes("Number") ? "phone-pad" : "default"} maxLength={field.maxLength} multiline={field.multiline} numberOfLines={field.multiline ? 3 : 1} onChangeText={(text) => setValues((current) => ({ ...current, [field.key]: text }))} />)}
                 <SelectField label="Status" value={values.status ?? ""} options={statuses.map((status) => ({ value: status, label: status }))} placeholder="Choose status" disabled={busy} onChange={(status) => setValues((current) => ({ ...current, status }))} />
                 <ActionButton label={busy ? "Saving…" : "Save customer"} disabled={busy} onPress={() => void save()} />
               </Card> : null}
@@ -310,11 +315,14 @@ export default function CustomerDetailsModal({ customerId, onClose, onSaved }: {
                       <Text className="mt-1 text-xs leading-5 text-brand-muted dark:text-slate-400">Uploaded {display(document.uploadedAt)}{isRecord(document.uploadedBy) ? ` · By ${display(document.uploadedBy)}` : ""}</Text>
                       {document.verifiedAt ? <Text className="mt-1 text-xs leading-5 text-brand-muted dark:text-slate-400">Verified {display(document.verifiedAt)}{isRecord(document.verifiedBy) ? ` · By ${display(document.verifiedBy)}` : ""}</Text> : null}
                       {typeof document.verificationRemark === "string" && document.verificationRemark ? <Text className="mt-1 text-xs text-brand-ink dark:text-slate-100">Note: {document.verificationRemark}</Text> : null}
+                      {roleCode === "MIS" ? <Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">MIS: {readable(document.misVerificationStatus ?? "PENDING")}{typeof document.misVerificationRemark === "string" && document.misVerificationRemark ? ` - ${document.misVerificationRemark}` : ""}</Text> : null}
                       <View className="mt-3 flex-row flex-wrap gap-2">
                         <ActionButton label={preview?.documentId === documentId ? "Hide preview" : "Preview"} icon={Eye} kind="secondary" disabled={busy || documentBusy || uploadBusy} onPress={() => void documentAction(document, "preview")} />
                         <ActionButton label="Download" icon={Download} kind="secondary" disabled={busy || documentBusy || uploadBusy} onPress={() => void documentAction(document, "download")} />
-                        <ActionButton label={document.verificationStatus === "VERIFIED" ? "Verified" : "Verify"} icon={ShieldCheck} kind="secondary" disabled={busy || documentBusy || uploadBusy || document.verificationStatus === "VERIFIED"} onPress={() => void documentAction(document, "verify")} />
+                        {roleCode === "MIS" && document.verificationStatus === "VERIFIED" && String(rows("documents").find(item => item.documentType === document.documentType)?._id ?? "") === documentId ? <><Pressable accessibilityRole="button" accessibilityState={{ selected: document.misVerificationStatus === "VERIFIED", disabled: documentBusy || document.misVerificationStatus === "VERIFIED" }} disabled={documentBusy || document.misVerificationStatus === "VERIFIED"} onPress={() => void documentAction(document, "mis-verify")} className="min-h-11 justify-center rounded-xl border border-brand-line px-4" style={document.misVerificationStatus === "VERIFIED" ? { backgroundColor: "#15803d", borderColor: "#15803d" } : undefined}><Text className={document.misVerificationStatus === "VERIFIED" ? "text-sm font-bold text-white" : "text-sm font-bold text-brand-ink dark:text-slate-100"}>{document.misVerificationStatus === "VERIFIED" ? "Verified" : "MIS verify"}</Text></Pressable><Pressable accessibilityRole="button" accessibilityState={{ selected: document.misVerificationStatus !== "VERIFIED" && Boolean(document.misVerificationRemark), disabled: documentBusy }} disabled={documentBusy} onPress={() => { setRejectId(documentId); setRejectRemark(""); }} className="min-h-11 justify-center rounded-xl border border-brand-line px-4" style={document.misVerificationStatus !== "VERIFIED" && document.misVerificationRemark ? { backgroundColor: "#b91c1c", borderColor: "#b91c1c" } : undefined}><Text className={document.misVerificationStatus !== "VERIFIED" && document.misVerificationRemark ? "text-sm font-bold text-white" : "text-sm font-bold text-brand-ink dark:text-slate-100"}>{document.misVerificationStatus !== "VERIFIED" && document.misVerificationRemark ? "Pending" : "Mark pending"}</Text></Pressable></> : null}
+                        {(record.reviewCp ? roleCode === "RM" : roleCode !== "CP" && roleCode !== "MIS") && document.verificationStatus === "PENDING" ? <><ActionButton label="Verify" icon={ShieldCheck} kind="secondary" disabled={busy || documentBusy || uploadBusy} onPress={() => void documentAction(document, "verify")} /><ActionButton label="Reject" kind="secondary" disabled={busy || documentBusy || uploadBusy} onPress={() => { setRejectId(documentId); setRejectRemark(""); }}/></> : null}
                       </View>
+                      {rejectId === documentId ? <View className="mt-3"><Field label={roleCode === "MIS" ? "Issue with this file" : "Rejection reason"} value={rejectRemark} maxLength={1000} multiline onChangeText={setRejectRemark}/><ActionButton label={roleCode === "MIS" ? "Save pending remark" : "Send rejection"} disabled={documentBusy || !rejectRemark.trim()} onPress={() => void documentAction(document, roleCode === "MIS" ? "mis-pending" : "reject")}/></View> : null}
                       {preview?.documentId === documentId ? <View className="mt-3">
                         {preview.contentType.startsWith("image/") ? <Image accessibilityLabel={preview.fileName} source={{ uri: preview.url }} resizeMode="contain" style={{ width: "100%", height: 300 }} onError={() => { setDocumentError("The preview could not be loaded. Try requesting a new preview."); setPreview(null); }} />
                           : preview.contentType === "application/pdf" && Platform.OS === "web" ? createElement("iframe", { title: preview.fileName, src: preview.url, style: { width: "100%", height: 400, border: 0 } }) : null}
@@ -324,15 +332,15 @@ export default function CustomerDetailsModal({ customerId, onClose, onSaved }: {
                     </View>;
                   }) : <Text className="text-sm text-brand-muted dark:text-slate-400">No customer documents have been uploaded.</Text>}
                 </Card>
-                <Card className="mb-4">
-                  <Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">Upload customer document</Text>
-                  <SelectField label="Document type" value={documentType} options={documentTypes.map((value) => ({ value, label: readable(value) }))} placeholder="Choose document type" disabled={busy || documentBusy || uploadBusy} onChange={setDocumentType} />
+                {!record.reviewCp || roleCode === "CP" ? <Card className="mb-4">
+                  <Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">{record.reviewCp ? "Replace rejected document" : "Upload customer document"}</Text>
+                  <SelectField label="Document type" value={documentType} options={documentTypes.filter(value => !record.reviewCp || (Array.isArray(record.reviewRequiredTypes) && record.reviewRequiredTypes.includes(value) && (!rows("documents").find(doc => doc.documentType === value) || rows("documents").find(doc => doc.documentType === value)?.verificationStatus === "REJECTED"))).map((value) => ({ value, label: readable(value) }))} placeholder="Choose document type" disabled={busy || documentBusy || uploadBusy} onChange={setDocumentType} />
                   <Text className="mb-2 text-xs text-brand-muted dark:text-slate-400">File (PDF or image, max 20 MB)</Text>
                   <ActionButton label={file ? "Change file" : "Choose file"} kind="secondary" disabled={busy || documentBusy || uploadBusy} onPress={() => void pickFile()} />
                   {file ? <Text className="mt-2 text-xs text-brand-ink dark:text-slate-100">{file.name}</Text> : null}
                   {uploadError ? <View className="mt-3"><ErrorNotice message={uploadError} /></View> : null}
                   <View className="mt-3"><ActionButton label={uploadBusy ? "Uploading…" : "Upload document"} disabled={busy || documentBusy || uploadBusy} onPress={() => void uploadDocument()} /></View>
-                </Card>
+                </Card> : null}
                 <Card className="mb-4"><Text className="mb-2 text-base font-bold text-brand-ink dark:text-slate-100">Lead status history</Text>
                   {rows("leadStatusHistory").length ? rows("leadStatusHistory").map((entry, index) => <View key={String(entry._id ?? index)} className="border-b border-brand-line dark:border-slate-700 py-3">
                     <Text className="text-sm font-bold text-brand-ink dark:text-slate-100">{readable(entry.previousStatus)} → {readable(entry.newStatus)}</Text>

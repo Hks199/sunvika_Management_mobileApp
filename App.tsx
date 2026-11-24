@@ -1,3 +1,4 @@
+import HoldCustomersScreen from './src/screens/HoldCustomersScreen';
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -53,6 +54,8 @@ const moduleLabels: Record<ModuleKey, string> = {
   leads: "Leads",
   visits: "Site visits",
   customers: "Customers",
+  "hold-customers": "Hold customers",
+  "document-review": "New customers",
   quotations: "Quotations",
   amc: "AMC contracts",
   "calling-reports": "Calling reports",
@@ -76,6 +79,8 @@ const sections: Array<{
       { key: "leads", icon: ContactRound },
       { key: "visits", icon: CalendarClock },
       { key: "customers", icon: Users },
+      { key: "hold-customers", icon: Users },
+      { key: "document-review", icon: ShieldCheck },
       { key: "quotations", icon: FileText },
       { key: "amc", icon: Wrench },
     ],
@@ -117,7 +122,7 @@ function MoreScreen({ onNavigate }: { onNavigate: (screen: ScreenKey) => void })
           <View key={section.title} className="mb-5">
             <Text className="mb-2 ml-1 text-[10px] font-bold tracking-[1.4px] text-brand-muted dark:text-slate-400">{section.title}</Text>
             <Card className="p-1">
-              {section.items.filter(item => (item.key === "calling-reports" || item.key === "cp-notifications") ? ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "") : item.key === "announcements" ? ANNOUNCEMENT_PUBLISHERS.includes(role ?? "") : item.key === "roles" ? role === "MD" : item.key === "queries" ? QUERY_ROLES.includes(role ?? "") : item.key !== "calling-lists" || ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "")).map(({ key, icon: Icon }, index) => (
+              {section.items.filter(item => item.key === "document-review" ? ["MD", "CP_HEAD", "RM", "MIS"].includes(role ?? "") : item.key === "hold-customers" ? role === "CP" : (item.key === "calling-reports" || item.key === "cp-notifications") ? ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "") : item.key === "announcements" ? ANNOUNCEMENT_PUBLISHERS.includes(role ?? "") : item.key === "roles" ? role === "MD" : item.key === "queries" ? QUERY_ROLES.includes(role ?? "") : item.key !== "calling-lists" || ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "")).map(({ key, icon: Icon }, index) => (
                 <Pressable
                   key={key}
                   onPress={() => onNavigate(key)}
@@ -264,6 +269,10 @@ function Workspace() {
           <QueriesScreen key={queryLink.version} initialThread={queryLink.id} onBack={() => setScreen("more")}/>
         ) : screen === "cp-notifications" ? (
           <CpRemindersScreen onBack={() => setScreen("more")}/>
+        ) : screen === "document-review" ? (
+          <HoldCustomersScreen review onBack={() => setScreen("more")}/>
+        ) : screen === "hold-customers" ? (
+          <HoldCustomersScreen onBack={() => setScreen("more")}/>
         ) : screen === "calling-reports" ? (
           <CallingReportsScreen onBack={() => setScreen("more")}/>
         ) : screen === "calling-lists" ? (

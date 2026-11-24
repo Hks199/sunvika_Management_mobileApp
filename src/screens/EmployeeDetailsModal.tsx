@@ -1,3 +1,4 @@
+import CpCustomers from '../components/CpCustomers';
 import EmployeeProfileImageEditor from '../components/EmployeeProfileImageEditor';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
@@ -46,6 +47,8 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
   const roleCode = typeof user?.role === "string" ? user.role : user?.role?.code;
   const [convertCustomer, setConvertCustomer] = useState(false);
   const [customerHistory, setCustomerHistory] = useState(false);
+  const [selectedCpCustomer, setSelectedCpCustomer] = useState("");
+  const [cpCustomerRefresh, setCpCustomerRefresh] = useState(0);
   const [record, setRecord] = useState<RecordValue | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -219,6 +222,7 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
             {imageUrl ? <Image accessibilityLabel={`${entity} profile image`} source={{ uri: imageUrl }} resizeMode="contain" style={{ width: "100%", height: 220, borderRadius: 12 }} onError={() => { setImageUrl(""); setImageError("The image could not be loaded. Request a fresh profile image link."); }} /> : null}
             <View className="mt-3 self-start"><ActionButton label="Refresh image" kind="secondary" disabled={imageLoading} onPress={() => void loadImage()} /></View>
           </Card> : null}
+          {isChannelPartner ? <CpCustomers cpId={employeeId} refreshKey={cpCustomerRefresh} onSelect={setSelectedCpCustomer}/> : null}
           {isChannelPartner && !recordId(record.sourceCustomer) && record.isActive !== false && ["MD", "CP_HEAD", "RM"].includes(roleCode ?? "") ? <View className="mb-4 self-start"><ActionButton label="Convert to customer" disabled={busy} onPress={() => setConvertCustomer(true)}/></View> : null}
           {recordId(record.sourceCustomer) ? <View className="mb-4 self-start"><ActionButton label="Customer history" kind="secondary" onPress={() => setCustomerHistory(true)}/></View> : null}
           <Card className="mb-4"><Text className="mb-1 text-base font-bold text-brand-ink dark:text-slate-100">{entity} information</Text><Details record={record} channelPartner={isChannelPartner} /></Card>
@@ -239,6 +243,7 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
     </View></View>
   </Modal>
   {convertCustomer ? <CpCustomerConversionModal cpId={employeeId} onClose={() => setConvertCustomer(false)} onSaved={() => { setConvertCustomer(false); setNotice("Customer created and linked to this channel partner."); onSaved(); void reload(); }}/> : null}
+  {selectedCpCustomer ? <CustomerDetailsModal customerId={selectedCpCustomer} onClose={() => setSelectedCpCustomer("")} onSaved={() => { setCpCustomerRefresh(value => value + 1); void load(); }}/> : null}
   {customerHistory && recordId(record?.sourceCustomer) ? <CustomerDetailsModal customerId={recordId(record?.sourceCustomer)} onClose={() => setCustomerHistory(false)} onSaved={() => { void load(); }}/> : null}
 </Modal>
   

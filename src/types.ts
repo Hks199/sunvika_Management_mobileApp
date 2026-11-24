@@ -25,6 +25,8 @@ export type ModuleKey =
   | "leads"
   | "visits"
   | "customers"
+  | "hold-customers"
+  | "document-review"
   | "quotations"
   | "amc"
   | "cp-notifications"
