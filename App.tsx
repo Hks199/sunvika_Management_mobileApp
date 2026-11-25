@@ -1,3 +1,4 @@
+﻿import ProfileScreen from "./src/screens/ProfileScreen";
 import StateCandidatesScreen from "./src/screens/StateCandidatesScreen";
 import HoldCustomersScreen from './src/screens/HoldCustomersScreen';
 import { useEffect, useState } from "react";
@@ -46,7 +47,7 @@ import type { ModuleKey, ScreenKey } from "./src/types";
 import { Card, Page } from "./src/ui";
 import { AppearanceSetting, ThemeProvider, useTheme } from "./src/theme";
 
-type AppScreen = ScreenKey | "more";
+type AppScreen = ScreenKey | "more" | "profile";
 
 const moduleLabels: Record<ModuleKey, string> = {
   announcements: "Announcements",
@@ -112,7 +113,7 @@ const sections: Array<{
   },
 ];
 
-function MoreScreen({ onNavigate }: { onNavigate: (screen: ScreenKey) => void }) {
+function MoreScreen({ onNavigate }: { onNavigate: (screen: ScreenKey | "profile") => void }) {
   const { user } = useAuth();
   const role = typeof user?.role === "string" ? user.role : user?.role?.code;
   return (
@@ -121,11 +122,12 @@ function MoreScreen({ onNavigate }: { onNavigate: (screen: ScreenKey) => void })
       <Text className="mb-1 text-[27px] font-bold text-brand-ink dark:text-slate-100">More</Text>
       <Text className="mb-5 text-xs leading-5 text-brand-muted dark:text-slate-400">Organization tools, reports, and account security.</Text>
       <AppearanceSetting />
+      <Pressable accessibilityRole="button" onPress={() => onNavigate("profile")} className="mb-5 rounded-xl border border-brand-line dark:border-slate-700 bg-white dark:bg-slate-800 p-4"><Text className="font-bold text-brand-ink dark:text-slate-100">My profile</Text></Pressable>
       {sections.map((section) => (
           <View key={section.title} className="mb-5">
             <Text className="mb-2 ml-1 text-[10px] font-bold tracking-[1.4px] text-brand-muted dark:text-slate-400">{section.title}</Text>
             <Card className="p-1">
-              {section.items.filter(item => item.key === "state-candidates" ? ["MD", "MIS", "CP_HEAD"].includes(role ?? "") : item.key === "document-review" ? ["MD", "CP_HEAD", "RM", "MIS"].includes(role ?? "") : item.key === "hold-customers" ? role === "CP" : (item.key === "calling-reports" || item.key === "cp-notifications") ? ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "") : item.key === "announcements" ? ANNOUNCEMENT_PUBLISHERS.includes(role ?? "") : item.key === "roles" ? role === "MD" : item.key === "queries" ? QUERY_ROLES.includes(role ?? "") : item.key !== "calling-lists" || ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "")).map(({ key, icon: Icon }, index) => (
+              {section.items.filter(item => role === "RM" && ["reports","audit","amc"].includes(item.key) ? false : role === "CP" && ["employees","channel-partners","amc","reports","audit"].includes(item.key) ? false : item.key === "state-candidates" ? ["MD", "MIS", "CP_HEAD"].includes(role ?? "") : item.key === "document-review" ? ["MD", "CP_HEAD", "RM", "MIS"].includes(role ?? "") : item.key === "hold-customers" ? role === "CP" : (item.key === "calling-reports" || item.key === "cp-notifications") ? ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "") : item.key === "announcements" ? ANNOUNCEMENT_PUBLISHERS.includes(role ?? "") : item.key === "roles" ? role === "MD" : item.key === "queries" ? QUERY_ROLES.includes(role ?? "") : item.key !== "calling-lists" || ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "")).map(({ key, icon: Icon }, index) => (
                 <Pressable
                   key={key}
                   onPress={() => onNavigate(key)}
@@ -135,7 +137,7 @@ function MoreScreen({ onNavigate }: { onNavigate: (screen: ScreenKey) => void })
                     <Icon size={17} color="#17247a" />
                   </View>
                   <Text className="flex-1 text-sm font-semibold text-brand-ink dark:text-slate-100">{moduleLabels[key]}</Text>
-                  <Text className="text-lg text-brand-muted dark:text-slate-400">›</Text>
+                  <Text className="text-lg text-brand-muted dark:text-slate-400">â€º</Text>
                 </Pressable>
               ))}
             </Card>
@@ -153,6 +155,7 @@ function Workspace() {
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const [signOutError, setSignOutError] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState("");
+  const [profileImageVersion, setProfileImageVersion] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -165,7 +168,7 @@ function Workspace() {
     const loadProfileImage = async () => {
       try {
         const response = await api.get<{ url?: string }>(
-          `/employees/${encodeURIComponent(employeeId)}/profile-image-url`,
+          "/employees/me/profile-image-url",
         );
         if (active) setProfileImageUrl(response.data?.url ?? "");
       } catch {
@@ -180,7 +183,7 @@ function Workspace() {
       active = false;
       clearTimeout(refreshTimer);
     };
-  }, [user?.id, user?._id]);
+  }, [user?.id, user?._id, profileImageVersion]);
 
   useEffect(() => {
     let active = true;
@@ -194,7 +197,7 @@ function Workspace() {
     return (
       <View className="flex-1 items-center justify-center bg-brand-canvas dark:bg-slate-950">
         <ActivityIndicator size="large" color="#17247a" />
-        <Text className="mt-3 text-sm text-brand-muted dark:text-slate-400">Loading your workspace…</Text>
+        <Text className="mt-3 text-sm text-brand-muted dark:text-slate-400">Loading your workspaceâ€¦</Text>
       </View>
     );
   }
@@ -202,7 +205,7 @@ function Workspace() {
 
   const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.name || "Team member";
   const initials = name.trim().slice(0, 1).toUpperCase();
-  const title = screen === "overview" ? "Overview" : screen === "more" ? "More" : moduleLabels[screen];
+  const title = screen === "overview" ? "Overview" : screen === "more" ? "More" : screen === "profile" ? "My profile" : moduleLabels[screen];
 
   async function logout() {
     setSignOutError("");
@@ -214,7 +217,10 @@ function Workspace() {
     }
   }
 
-  function navigate(next: ScreenKey) {
+  function navigate(next: ScreenKey | "profile") {
+    const role = typeof user?.role === "string" ? user.role : user?.role?.code;
+    if (role === "RM" && ["reports","audit","amc"].includes(next)) return;
+    if (role === "CP" && ["employees","channel-partners","amc","reports","audit"].includes(next)) return;
     if (next === "queries") setQueryLink(current => ({ id: "", version: current.version + 1 }));
     setScreen(next);
   }
@@ -237,7 +243,7 @@ function Workspace() {
           </Text>
         </View>
         <NotificationBell onOpenThread={id => { setQueryLink(current => ({ id, version: current.version + 1 })); setScreen("queries"); }}/>
-        <View className="mr-2 h-9 w-9 overflow-hidden items-center justify-center rounded-full bg-indigo-50">
+        <Pressable accessibilityRole="button" accessibilityLabel="My profile" onPress={() => setScreen("profile")} className="mr-2 h-9 w-9 overflow-hidden items-center justify-center rounded-full bg-indigo-50">
           {profileImageUrl ? (
             <Image
               source={{ uri: profileImageUrl }}
@@ -248,7 +254,7 @@ function Workspace() {
           ) : (
             <Text className="text-sm font-bold text-brand-navy">{initials}</Text>
           )}
-        </View>
+        </Pressable>
         <Pressable
           accessibilityLabel="Sign out"
           onPress={() => void logout()}
@@ -264,7 +270,9 @@ function Workspace() {
         </View>
       ) : null}
       <View className="flex-1">
-        {screen === "overview" ? (
+        {screen === "profile" ? (
+          <ProfileScreen onBack={() => setScreen("more")} onImageSaved={() => setProfileImageVersion(v => v + 1)} />
+        ) : screen === "overview" ? (
           <DashboardScreen onNavigate={navigate} />
         ) : screen === "announcements" ? (
           <AnnouncementsScreen onBack={() => setScreen("more")}/>
@@ -298,7 +306,7 @@ function Workspace() {
         <TabButton label="Overview" icon={Home} active={screen === "overview"} onPress={() => setScreen("overview")} />
         <TabButton label="Leads" icon={ContactRound} active={screen === "leads"} onPress={() => setScreen("leads")} />
         <TabButton label="Visits" icon={CalendarClock} active={screen === "visits"} onPress={() => setScreen("visits")} />
-        <TabButton label="Team" icon={Users} active={screen === "employees"} onPress={() => setScreen("employees")} />
+        {(typeof user.role === "string" ? user.role : user.role?.code) !== "CP" ? <TabButton label="Team" icon={Users} active={screen === "employees"} onPress={() => setScreen("employees")} /> : null}
         <TabButton label="More" icon={MoreHorizontal} active={screen === "more"} onPress={() => setScreen("more")} />
       </View>
     </SafeAreaView>

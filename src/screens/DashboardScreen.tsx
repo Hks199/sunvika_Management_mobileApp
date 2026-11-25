@@ -33,6 +33,7 @@ const focusItems: Array<{ title: string; caption: string; screen: ScreenKey; ico
 
 export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: ScreenKey) => void }) {
   const { user } = useAuth();
+  const isCp = (typeof user?.role === "string" ? user.role : user?.role?.code) === "CP";
   const [summary, setSummary] = useState<RecordValue | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -137,7 +138,7 @@ export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: S
       <Card className="mb-4">
         <SectionTitle title="Today’s focus" />
         <Text className="mb-3 text-xs text-brand-muted dark:text-slate-400">Open your live work queues</Text>
-        {focusItems.map(({ title, caption, screen, icon: Icon, tone }) => (
+        {focusItems.filter(item => !isCp || (item.screen !== "employees" && item.screen !== "amc")).map(({ title, caption, screen, icon: Icon, tone }) => (
           <Pressable
             key={screen}
             onPress={() => onNavigate(screen)}
@@ -153,10 +154,10 @@ export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: S
             <ArrowUpRight size={16} color="#78819b" />
           </Pressable>
         ))}
-        <Pressable onPress={() => onNavigate("reports")} className="mt-2 flex-row items-center self-start">
+        {!isCp ? <Pressable onPress={() => onNavigate("reports")} className="mt-2 flex-row items-center self-start">
           <Text className="text-xs font-bold text-brand-navy dark:text-indigo-200">Explore reports</Text>
           <ArrowUpRight size={14} color="#17247a" />
-        </Pressable>
+        </Pressable> : null}
       </Card>
 
       <Card className="border-brand-navy bg-brand-deep">

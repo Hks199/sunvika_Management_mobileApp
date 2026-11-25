@@ -19,7 +19,6 @@ function normalized(value: unknown) { return typeof value === "string" ? value.t
 const fields = [
   { key: "employeeCode", label: "Employee code", max: 40, placeholder: "e.g. SVK-EMP-001" },
   { key: "firstName", label: "First name", max: 80 },
-  { key: "middleName", label: "Middle name", max: 80 },
   { key: "lastName", label: "Last name", max: 80 },
   { key: "email", label: "Work email", max: 254 },
   { key: "mobileNumber", label: "Mobile number", max: 16 },
@@ -117,7 +116,6 @@ export default function EmployeeCreateModal({ onClose, onSaved, directory = "all
       const employeeCode = value("employeeCode").toUpperCase();
       if (!/^[A-Z0-9][A-Z0-9_-]{1,39}$/.test(employeeCode)) throw new Error("Employee code must be 2–40 characters using letters, numbers, hyphens, or underscores.");
       if (!value("firstName") || value("firstName").length > 80 || !value("lastName") || value("lastName").length > 80) throw new Error("First and last names are required (up to 80 characters).");
-      if (value("middleName").length > 80) throw new Error("Middle name must be 80 characters or fewer.");
       const email = value("email").toLowerCase();
       if ((!directCp || email) && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)) throw new Error("Enter a valid work email address.");
       const password = values.password ?? "";
@@ -128,7 +126,7 @@ export default function EmployeeCreateModal({ onClose, onSaved, directory = "all
       if (value("addressLine").length < 3 || value("addressLine").length > 300 || !objectId(stateId) || !objectId(districtId)) throw new Error("Enter an address and select its state and district.");
       if (value("city").length > 100 || (value("pincode") && !/^[A-Za-z0-9 -]{3,12}$/.test(value("pincode")))) throw new Error("Check the city and postal code.");
       if (value("branch") && !objectId(value("branch"))) throw new Error("Select a valid branch.");
-      const payload: RecordValue = { employeeCode, firstName: value("firstName"), ...(value("middleName") ? { middleName: value("middleName") } : {}), lastName: value("lastName"), ...(email ? { email } : {}), ...(directCp ? { password } : {}), mobileNumber: value("mobileNumber"), roleCode: value("roleCode"),
+      const payload: RecordValue = { employeeCode, firstName: value("firstName"), lastName: value("lastName"), ...(email ? { email } : {}), ...(directCp ? { password } : {}), mobileNumber: value("mobileNumber"), roleCode: value("roleCode"),
         address: { addressLine: value("addressLine"), state: stateId, district: districtId, ...(value("city") ? { city: value("city") } : {}), ...(value("pincode") ? { pincode: value("pincode") } : {}) }, ...(value("branch") ? { branch: value("branch") } : {}) };
       setBusy(true);
       if (image) {
