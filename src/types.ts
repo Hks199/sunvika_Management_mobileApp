@@ -31,6 +31,7 @@ export type ModuleKey =
   | "amc"
   | "cp-notifications"
   | "calling-reports"
+  | "state-candidates"
   | "calling-lists"
   | "channel-partners"
   | "employees"
