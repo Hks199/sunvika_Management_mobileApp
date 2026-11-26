@@ -1,4 +1,5 @@
 import CpCustomers from '../components/CpCustomers';
+import CpIdentityDocuments from '../components/CpIdentityDocuments';
 import EmployeeProfileImageEditor from '../components/EmployeeProfileImageEditor';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
@@ -208,6 +209,7 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
             <ActionButton label="Profile image" kind="secondary" disabled={imageLoading} onPress={() => { setImagePreviewOpen(true); void loadImage(); }} />
             <ActionButton label="Reporting hierarchy" icon={Clock3} kind="secondary" disabled={hierarchyLoading} onPress={() => void loadHierarchy()} />
           </View>
+          {isChannelPartner ? <CpIdentityDocuments employeeId={employeeId}/> : null}
           <EmployeeProfileImageEditor key={employeeId} employeeId={employeeId} onSaved={async()=>{await load();onSaved();}}/>
           {actionError ? <ErrorNotice message={actionError} /> : null}
           {action ? <Card className="mb-4"><Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">{action === "edit" ? `Edit ${entity.toLowerCase()}` : "Change reporting manager"}</Text>

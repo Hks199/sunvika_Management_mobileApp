@@ -41,6 +41,7 @@ export default function EmployeeCreateModal({ onClose, onSaved, directory = "all
   const [geographyError, setGeographyError] = useState("");
   const [reload, setReload] = useState(0);
   const [roleReload, setRoleReload] = useState(0);
+  const [identityFiles,setIdentityFiles]=useState<Partial<Record<"AADHAAR"|"PAN"|"PHOTO",DocumentPicker.DocumentPickerAsset>>>({});
   const [image, setImage] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -107,6 +108,7 @@ export default function EmployeeCreateModal({ onClose, onSaved, directory = "all
       setImage(file); setUploadedImage(null);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to select profile image."); }
   }
+  async function pickIdentity(type:"AADHAAR"|"PAN"|"PHOTO") {try{const result=await DocumentPicker.getDocumentAsync({type:type==="PHOTO"?["image/jpeg","image/png","image/webp"]:["application/pdf","image/jpeg","image/png","image/webp"],copyToCacheDirectory:true});if(result.canceled)return;const file=result.assets[0];if(!file||!file.mimeType||(type==="PHOTO"&&!file.mimeType.startsWith("image/"))||!["application/pdf","image/jpeg","image/png","image/webp"].includes(file.mimeType)||!file.size||file.size>20*1024*1024)throw new Error("Choose a PDF, JPEG, PNG or WebP up to 20 MB.");setIdentityFiles(current=>({...current,[type]:file}));}catch(cause){setError(cause instanceof Error?cause.message:"Unable to select document.");}}
   async function submit() {
     if (busy) return;
     setError("");
@@ -142,9 +144,12 @@ export default function EmployeeCreateModal({ onClose, onSaved, directory = "all
         }
         payload.profileImageUploadId = uploadId;
       }
-      const result = await api.post<{ invitationSent: boolean; credentialsCreated?: boolean }>("/employees", payload);
+      const result = await api.post<{ employee:{_id:string}; invitationSent: boolean; credentialsCreated?: boolean }>("/employees", payload);
+      const failures:string[]=[];
+      if(value("roleCode")==="CP")for(const type of ["AADHAAR","PAN","PHOTO"] as const){const file=identityFiles[type];if(!file)continue;try{const bytes=file.file?await file.file.arrayBuffer():await (await fetch(file.uri)).arrayBuffer();await api.putBinary(`/employees/${encodeURIComponent(result.data.employee._id)}/identity-documents/${type}`,bytes,file.mimeType!);}catch{failures.push(type);}}
       onSaved(); onClose();
-      if (result.data.credentialsCreated) Alert.alert("Channel partner created", `User ID: ${employeeCode}. Share the password securely.`);
+      if(failures.length)Alert.alert("Channel partner created",`${failures.join(", ")} upload failed. Open CP details to upload again. Do not create the CP again.`);
+      else if (result.data.credentialsCreated) Alert.alert("Channel partner created", `User ID: ${employeeCode}. Share the password securely.`);
       else if (!result.data.invitationSent) Alert.alert("Employee created", "The invitation email could not be sent. Do not create the employee again. Open the employee details and resend the invitation after email is fixed.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not invite employee."); }
     finally { setBusy(false); }
@@ -165,6 +170,7 @@ export default function EmployeeCreateModal({ onClose, onSaved, directory = "all
         <SelectField label="Branch (optional)" value={values.branch ?? ""} options={branches} placeholder="No branch" loading={loading.branches} disabled={busy || !districtId} onChange={(value) => setValue("branch", value)} />
         {districtId && !loading.branches && !branches.length ? <Text className="mb-3 text-xs text-brand-muted dark:text-slate-400">No active branches for this district.</Text> : null}
         {geographyError ? <ErrorNotice message={geographyError} onRetry={() => setReload((current) => current + 1)} /> : null}
+        {directory === "cp" || values.roleCode === "CP" ? (["AADHAAR","PAN","PHOTO"] as const).map(type=><View key={type} className="mb-3"><ActionButton label={`Choose ${type === "AADHAAR" ? "Aadhaar" : type === "PAN" ? "PAN" : "passport-size photo"} (optional)`} kind="secondary" disabled={busy} onPress={()=>void pickIdentity(type)}/>{identityFiles[type]?<><Text className="my-2 text-xs text-brand-muted dark:text-slate-400">{identityFiles[type]?.name}</Text><ActionButton label="Remove document" kind="secondary" disabled={busy} onPress={()=>setIdentityFiles(current=>({...current,[type]:undefined}))}/></>:null}</View>):null}
         <Text className="mb-2 text-xs font-semibold text-brand-ink dark:text-slate-100">Profile image (optional, JPEG, PNG, WebP · max 10 MB)</Text>
         <ActionButton label={image ? "Change profile image" : "Choose profile image"} kind="secondary" disabled={busy} onPress={() => void pickImage()} />
         {image ? <View className="my-3"><Image accessibilityLabel="Selected profile image" source={{ uri: image.uri }} style={{ width: 88, height: 88, borderRadius: 12 }} /><Text className="my-2 text-xs text-brand-muted dark:text-slate-400">{image.name}</Text><ActionButton label="Remove image" kind="secondary" disabled={busy} onPress={() => { setImage(null); setUploadedImage(null); }} /></View> : null}
