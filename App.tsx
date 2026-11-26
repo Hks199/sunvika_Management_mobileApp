@@ -42,6 +42,7 @@ import { QUERY_ROLES } from "./src/queries";
 import CpRemindersScreen from "./src/screens/CpRemindersScreen";
 import CallingReportsScreen from "./src/screens/CallingReportsScreen";
 import CallingListsScreen from "./src/screens/CallingListsScreen";
+import ScreenCaptureProtection from "./src/components/ScreenCaptureProtection";
 import DirectoryScreens from "./src/screens/DirectoryScreens";
 import LoginScreen from "./src/screens/LoginScreen";
 import RecordsScreen from "./src/screens/RecordsScreen";
@@ -348,9 +349,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <AuthProvider>
-          <Workspace />
-        </AuthProvider>
+        <ScreenCaptureProtection>
+          <AuthProvider>
+            <Workspace />
+          </AuthProvider>
+        </ScreenCaptureProtection>
       </ThemeProvider>
     </SafeAreaProvider>
   );
