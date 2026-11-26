@@ -11,9 +11,6 @@
     "icon": "./assets/icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "backgroundColor": "#f6f7fc"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -26,8 +23,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "usesCleartextTraffic": true
+      }
     },
     "plugins": [
       "expo-secure-store",
@@ -39,6 +35,12 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Allow Sunvika to check your location while you are active for calling sheets."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#f6f7fc"
         }
       ]
     ]
