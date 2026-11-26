@@ -1,5 +1,6 @@
 ﻿import ProfileScreen from "./src/screens/ProfileScreen";
 import CallingAvailability from "./src/components/CallingAvailability";
+import CallingLocationSettings from "./src/components/CallingLocationSettings";
 import StateCandidatesScreen from "./src/screens/StateCandidatesScreen";
 import HoldCustomersScreen from './src/screens/HoldCustomersScreen';
 import { useEffect, useState } from "react";
@@ -63,6 +64,7 @@ const moduleLabels: Record<ModuleKey, string> = {
   amc: "AMC contracts",
   "calling-reports": "Calling reports",
   "calling-lists": "CP calling lists",
+  "rm-calling-location": "RM calling location",
   "state-candidates": "Candidate sheets",
   "channel-partners": "Channel Partners",
   employees: "Employees",
@@ -107,6 +109,7 @@ const sections: Array<{
   {
     title: "ADMINISTRATION",
     items: [
+      { key: "rm-calling-location", icon: ShieldCheck },
       { key: "roles", icon: ShieldCheck },
       { key: "audit", icon: Activity },
       { key: "sessions", icon: ShieldCheck },
@@ -128,7 +131,7 @@ function MoreScreen({ onNavigate }: { onNavigate: (screen: ScreenKey | "profile"
           <View key={section.title} className="mb-5">
             <Text className="mb-2 ml-1 text-[10px] font-bold tracking-[1.4px] text-brand-muted dark:text-slate-400">{section.title}</Text>
             <Card className="p-1">
-              {section.items.filter(item => role === "RM" && ["reports","audit","amc"].includes(item.key) ? false : role === "CP" && ["employees","channel-partners","amc","reports","audit"].includes(item.key) ? false : item.key === "state-candidates" ? ["MD", "MIS", "CP_HEAD"].includes(role ?? "") : item.key === "document-review" ? ["MD", "CP_HEAD", "RM", "MIS"].includes(role ?? "") : item.key === "hold-customers" ? role === "CP" : (item.key === "calling-reports" || item.key === "cp-notifications") ? ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "") : item.key === "announcements" ? ANNOUNCEMENT_PUBLISHERS.includes(role ?? "") : item.key === "roles" ? role === "MD" : item.key === "queries" ? QUERY_ROLES.includes(role ?? "") : item.key !== "calling-lists" || ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "")).map(({ key, icon: Icon }, index) => (
+              {section.items.filter(item => role === "RM" && ["reports","audit","amc"].includes(item.key) ? false : role === "CP" && ["employees","channel-partners","amc","reports","audit"].includes(item.key) ? false : item.key === "state-candidates" ? ["MD", "MIS", "CP_HEAD"].includes(role ?? "") : item.key === "document-review" ? ["MD", "CP_HEAD", "RM", "MIS"].includes(role ?? "") : item.key === "hold-customers" ? role === "CP" : (item.key === "calling-reports" || item.key === "cp-notifications") ? ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "") : item.key === "announcements" ? ANNOUNCEMENT_PUBLISHERS.includes(role ?? "") : (item.key === "roles" || item.key === "rm-calling-location") ? role === "MD" : item.key === "queries" ? QUERY_ROLES.includes(role ?? "") : item.key !== "calling-lists" || ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "")).map(({ key, icon: Icon }, index) => (
                 <Pressable
                   key={key}
                   onPress={() => onNavigate(key)}
@@ -223,6 +226,7 @@ function Workspace() {
 
   function navigate(next: ScreenKey | "profile") {
     const role = typeof user?.role === "string" ? user.role : user?.role?.code;
+    if (next === "rm-calling-location" && role !== "MD") return;
     if (role === "RM" && ["reports","audit","amc"].includes(next)) return;
     if (role === "CP" && ["employees","channel-partners","amc","reports","audit"].includes(next)) return;
     if (next === "queries") setQueryLink(current => ({ id: "", version: current.version + 1 }));
@@ -293,6 +297,8 @@ function Workspace() {
           <CallingReportsScreen onBack={() => setScreen("more")}/>
         ) : screen === "state-candidates" ? (
           <StateCandidatesScreen onBack={() => setScreen("more")} />
+        ) : screen === "rm-calling-location" ? (
+          <Page><CallingLocationSettings /></Page>
         ) : screen === "calling-lists" ? (
           <CallingListsScreen onBack={() => setScreen("more")} />
         ) : screen === "more" ? (

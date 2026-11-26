@@ -33,6 +33,7 @@ export type ModuleKey =
   | "calling-reports"
   | "state-candidates"
   | "calling-lists"
+  | "rm-calling-location"
   | "channel-partners"
   | "employees"
   | "geography"
