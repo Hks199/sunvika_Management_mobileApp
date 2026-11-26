@@ -1,4 +1,5 @@
 ﻿import ProfileScreen from "./src/screens/ProfileScreen";
+import CallingAvailability from "./src/components/CallingAvailability";
 import StateCandidatesScreen from "./src/screens/StateCandidatesScreen";
 import HoldCustomersScreen from './src/screens/HoldCustomersScreen';
 import { useEffect, useState } from "react";
@@ -155,6 +156,7 @@ function Workspace() {
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const [signOutError, setSignOutError] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState("");
+  const [rmActive,setRmActive] = useState(false);
   const [profileImageVersion, setProfileImageVersion] = useState(0);
 
   useEffect(() => {
@@ -203,6 +205,7 @@ function Workspace() {
   }
   if (!user) return <LoginScreen />;
 
+  const isRm=(typeof user.role === "string" ? user.role : user.role?.code) === "RM";
   const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.name || "Team member";
   const initials = name.trim().slice(0, 1).toUpperCase();
   const title = screen === "overview" ? "Overview" : screen === "more" ? "More" : screen === "profile" ? "My profile" : moduleLabels[screen];
@@ -211,6 +214,7 @@ function Workspace() {
     setSignOutError("");
     try {
       await signOut();
+      setRmActive(false);
       setScreen("overview");
     } catch (cause) {
       setSignOutError(cause instanceof Error ? cause.message : "Unable to sign out.");
@@ -242,7 +246,7 @@ function Workspace() {
             {apiOnline === null ? "Checking" : apiOnline ? "API connected" : "API offline"}
           </Text>
         </View>
-        <NotificationBell onOpenThread={id => { setQueryLink(current => ({ id, version: current.version + 1 })); setScreen("queries"); }}/>
+        {(!isRm||rmActive) && <NotificationBell onOpenThread={id => { setQueryLink(current => ({ id, version: current.version + 1 })); setScreen("queries"); }}/> }
         <Pressable accessibilityRole="button" accessibilityLabel="My profile" onPress={() => setScreen("profile")} className="mr-2 h-9 w-9 overflow-hidden items-center justify-center rounded-full bg-indigo-50">
           {profileImageUrl ? (
             <Image
@@ -263,14 +267,15 @@ function Workspace() {
           <LogOut size={17} color="#78819b" />
         </Pressable>
       </View>
-      <AnnouncementBar/>
+      {(!isRm||rmActive) && <AnnouncementBar/>}
+      {isRm && <View className="px-4 pt-2"><CallingAvailability onChange={setRmActive}/></View>}
       {signOutError ? (
         <View className="bg-red-50 px-4 py-2">
           <Text className="text-xs text-red-800">{signOutError}</Text>
         </View>
       ) : null}
       <View className="flex-1">
-        {screen === "profile" ? (
+        {isRm && !rmActive ? <Text className="p-5 text-brand-muted dark:text-slate-400">Activate availability to access the app.</Text> : screen === "profile" ? (
           <ProfileScreen onBack={() => setScreen("more")} onImageSaved={() => setProfileImageVersion(v => v + 1)} />
         ) : screen === "overview" ? (
           <DashboardScreen onNavigate={navigate} />

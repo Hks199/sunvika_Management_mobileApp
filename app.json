@@ -34,7 +34,13 @@
       "expo-asset",
       "expo-status-bar",
       "expo-sharing",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Sunvika to check your location while you are active for calling sheets."
+        }
+      ]
     ]
   }
 }
