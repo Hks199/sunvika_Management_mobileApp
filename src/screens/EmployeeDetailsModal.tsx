@@ -1,3 +1,4 @@
+import TeamTransfer from "../components/TeamTransfer";
 import CpCustomers from '../components/CpCustomers';
 import CpIdentityDocuments from '../components/CpIdentityDocuments';
 import EmployeeProfileImageEditor from '../components/EmployeeProfileImageEditor';
@@ -210,6 +211,7 @@ export default function EmployeeDetailsModal({ employeeId, onClose, onSaved, cha
             <ActionButton label="Reporting hierarchy" icon={Clock3} kind="secondary" disabled={hierarchyLoading} onPress={() => void loadHierarchy()} />
           </View>
           {isChannelPartner ? <CpIdentityDocuments employeeId={employeeId}/> : null}
+          {((roleCode === "MD" && (record.role === "RM" || record.role === "CP_HEAD" || (isRecord(record.role) && ["RM", "CP_HEAD"].includes(String(record.role.code))))) || (roleCode === "CP_HEAD" && (record.role === "RM" || (isRecord(record.role) && record.role.code === "RM")))) ? <TeamTransfer employeeId={employeeId} onSaved={onSaved}/> : null}
           <EmployeeProfileImageEditor key={employeeId} employeeId={employeeId} onSaved={async()=>{await load();onSaved();}}/>
           {actionError ? <ErrorNotice message={actionError} /> : null}
           {action ? <Card className="mb-4"><Text className="mb-3 text-base font-bold text-brand-ink dark:text-slate-100">{action === "edit" ? `Edit ${entity.toLowerCase()}` : "Change reporting manager"}</Text>
