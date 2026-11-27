@@ -1,6 +1,7 @@
 ﻿import ProfileScreen from "./src/screens/ProfileScreen";
 import CallingAvailability from "./src/components/CallingAvailability";
 import CallingLocationSettings from "./src/components/CallingLocationSettings";
+import CpFollowupsScreen from "./src/screens/CpFollowupsScreen";
 import StateCandidatesScreen from "./src/screens/StateCandidatesScreen";
 import HoldCustomersScreen from './src/screens/HoldCustomersScreen';
 import { useEffect, useState } from "react";
@@ -56,6 +57,7 @@ const moduleLabels: Record<ModuleKey, string> = {
   announcements: "Announcements",
   queries: "Queries",
   "cp-notifications": "CP notifications",
+  "cp-followups": "CP follow-ups",
   leads: "Leads",
   visits: "Site visits",
   customers: "Customers",
@@ -83,6 +85,7 @@ const sections: Array<{
   {
     title: "WORKSPACE",
     items: [
+      { key: "cp-followups", icon: ContactRound },
       { key: "leads", icon: ContactRound },
       { key: "visits", icon: CalendarClock },
       { key: "customers", icon: Users },
@@ -132,7 +135,7 @@ function MoreScreen({ onNavigate }: { onNavigate: (screen: ScreenKey | "profile"
           <View key={section.title} className="mb-5">
             <Text className="mb-2 ml-1 text-[10px] font-bold tracking-[1.4px] text-brand-muted dark:text-slate-400">{section.title}</Text>
             <Card className="p-1">
-              {section.items.filter(item => role === "RM" && ["reports","audit","amc"].includes(item.key) ? false : role === "CP" && ["employees","channel-partners","amc","reports","audit"].includes(item.key) ? false : item.key === "state-candidates" ? ["MD", "MIS", "CP_HEAD"].includes(role ?? "") : item.key === "document-review" ? ["MD", "CP_HEAD", "RM", "MIS"].includes(role ?? "") : item.key === "hold-customers" ? role === "CP" : (item.key === "calling-reports" || item.key === "cp-notifications") ? ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "") : item.key === "announcements" ? ANNOUNCEMENT_PUBLISHERS.includes(role ?? "") : (item.key === "roles" || item.key === "rm-calling-location") ? role === "MD" : item.key === "queries" ? QUERY_ROLES.includes(role ?? "") : item.key !== "calling-lists" || ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "")).map(({ key, icon: Icon }, index) => (
+              {section.items.filter(item => role === "RM" && ["reports","audit","amc"].includes(item.key) ? false : role === "CP" && ["employees","channel-partners","amc","reports","audit"].includes(item.key) ? false : item.key === "cp-followups" ? ["MD", "CP_HEAD", "RM"].includes(role ?? "") : item.key === "state-candidates" ? ["MD", "MIS", "CP_HEAD"].includes(role ?? "") : item.key === "document-review" ? ["MD", "CP_HEAD", "RM", "MIS"].includes(role ?? "") : item.key === "hold-customers" ? role === "CP" : (item.key === "calling-reports" || item.key === "cp-notifications") ? ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "") : item.key === "announcements" ? ANNOUNCEMENT_PUBLISHERS.includes(role ?? "") : (item.key === "roles" || item.key === "rm-calling-location") ? role === "MD" : item.key === "queries" ? QUERY_ROLES.includes(role ?? "") : item.key !== "calling-lists" || ["MD", "MIS", "CP_HEAD", "RM"].includes(role ?? "")).map(({ key, icon: Icon }, index) => (
                 <Pressable
                   key={key}
                   onPress={() => onNavigate(key)}
@@ -228,6 +231,7 @@ function Workspace() {
   function navigate(next: ScreenKey | "profile") {
     const role = typeof user?.role === "string" ? user.role : user?.role?.code;
     if (next === "rm-calling-location" && role !== "MD") return;
+    if (next === "cp-followups" && !["MD","CP_HEAD","RM"].includes(role ?? "")) return;
     if (role === "RM" && ["reports","audit","amc"].includes(next)) return;
     if (role === "CP" && ["employees","channel-partners","amc","reports","audit"].includes(next)) return;
     if (next === "queries") setQueryLink(current => ({ id: "", version: current.version + 1 }));
@@ -288,6 +292,8 @@ function Workspace() {
           <AnnouncementsScreen onBack={() => setScreen("more")}/>
         ) : screen === "queries" ? (
           <QueriesScreen key={queryLink.version} initialThread={queryLink.id} onBack={() => setScreen("more")}/>
+        ) : screen === "cp-followups" ? (
+          <CpFollowupsScreen onBack={() => setScreen("more")}/>
         ) : screen === "cp-notifications" ? (
           <CpRemindersScreen onBack={() => setScreen("more")}/>
         ) : screen === "document-review" ? (

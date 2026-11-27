@@ -30,6 +30,7 @@ export type ModuleKey =
   | "quotations"
   | "amc"
   | "cp-notifications"
+  | "cp-followups"
   | "calling-reports"
   | "state-candidates"
   | "calling-lists"

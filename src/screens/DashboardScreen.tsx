@@ -33,7 +33,9 @@ const focusItems: Array<{ title: string; caption: string; screen: ScreenKey; ico
 
 export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: ScreenKey) => void }) {
   const { user } = useAuth();
-  const isCp = (typeof user?.role === "string" ? user.role : user?.role?.code) === "CP";
+  const roleCode = typeof user?.role === "string" ? user.role : user?.role?.code;
+  const isCp = roleCode === "CP";
+  const canSeeCpFollowups = ["MD", "CP_HEAD", "RM"].includes(roleCode ?? "");
   const [summary, setSummary] = useState<RecordValue | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -82,6 +84,7 @@ export default function DashboardScreen({ onNavigate }: { onNavigate: (screen: S
         </Pressable>
       </View>
 
+      {canSeeCpFollowups ? <Pressable accessibilityRole="button" accessibilityLabel="Open CP follow-ups" onPress={() => onNavigate("cp-followups")} className="mb-4 flex-row items-center rounded-2xl border border-emerald-100 bg-emerald-50 p-4 dark:border-slate-700 dark:bg-slate-800"><View className="mr-3 h-11 w-11 items-center justify-center rounded-xl bg-emerald-100"><CalendarClock size={20} color="#117755"/></View><View className="flex-1"><Text className="text-sm font-bold text-brand-ink dark:text-slate-100">CP follow-ups</Text><Text className="mt-1 text-xs text-brand-muted dark:text-slate-400">View RM follow-up reports and partner status</Text></View><ArrowUpRight size={17} color="#117755"/></Pressable> : null}
       {error ? <ErrorNotice message={error} onRetry={() => void load()} /> : null}
       <View className="mb-5 flex-row flex-wrap justify-between gap-y-3">
         {metrics.map(({ title, value, icon: Icon, tint }) => (
